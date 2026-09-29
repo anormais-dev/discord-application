@@ -10,6 +10,7 @@ interface RoomSliceState {
   room: RoomState | null;
   formats: Format[];
   error: string | null;
+  fatal: string | null;
 }
 
 const initialState: RoomSliceState = {
@@ -18,6 +19,7 @@ const initialState: RoomSliceState = {
   room: null,
   formats: [],
   error: null,
+  fatal: null,
 };
 
 // Tratadas pelo wsMiddleware.
@@ -37,6 +39,10 @@ const roomSlice = createSlice({
       state.me = action.payload.you;
       state.formats = action.payload.formats;
     },
+    sessionFailed(state, action: PayloadAction<string>) {
+      state.status = "error";
+      state.fatal = action.payload;
+    },
     errorReceived(state, action: PayloadAction<string>) {
       state.error = action.payload;
     },
@@ -46,7 +52,7 @@ const roomSlice = createSlice({
   },
 });
 
-export const { statusChanged, stateReceived, errorReceived, errorCleared } = roomSlice.actions;
+export const { statusChanged, stateReceived, sessionFailed, errorReceived, errorCleared } = roomSlice.actions;
 export const roomReducer = roomSlice.reducer;
 
 export const selectStatus = (s: RootState) => s.room.status;
@@ -54,6 +60,7 @@ export const selectRoom = (s: RootState) => s.room.room;
 export const selectMe = (s: RootState) => s.room.me;
 export const selectFormats = (s: RootState) => s.room.formats;
 export const selectError = (s: RootState) => s.room.error;
+export const selectFatal = (s: RootState) => s.room.fatal;
 
 export const selectParticipantsById = createSelector([selectRoom], (room) =>
   Object.fromEntries((room?.participants ?? []).map((p) => [p.id, p])),
