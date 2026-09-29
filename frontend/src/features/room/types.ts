@@ -13,6 +13,7 @@ export interface Participant {
   joinedAt: string;
 }
 
+// Giro em andamento. Todos os clientes animam a partir destes dados.
 export interface SpinState {
   winnerId: string;
   poolSnapshot: string[];
@@ -28,7 +29,7 @@ export interface RoomState {
   spinners: Record<string, boolean>;
   format: Format;
   pool: string[];
-  teams: string[][];
+  teams: Participant[][];
   phase: Phase;
   spin: SpinState | null;
   picks: number;
@@ -45,5 +46,4 @@ export type ClientMessage =
 
 export type ServerMessage =
   | { type: "state"; room: RoomState; you: string; formats: Format[] }
-  | { type: "spin_started"; spin: SpinState }
   | { type: "error"; message: string };
