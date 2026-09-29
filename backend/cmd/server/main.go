@@ -8,6 +8,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/anormais-dev/discord-application/backend/internal/devauth"
 	"github.com/anormais-dev/discord-application/backend/internal/discord"
 	"github.com/anormais-dev/discord-application/backend/internal/hub"
 )
@@ -17,10 +18,20 @@ func main() {
 
 	port := getenv("PORT", "3000")
 	dc := discord.NewClient(os.Getenv("DISCORD_CLIENT_ID"), os.Getenv("DISCORD_CLIENT_SECRET"))
-	if dc.ClientID == "" || dc.ClientSecret == "" {
-		log.Fatal("DISCORD_CLIENT_ID e DISCORD_CLIENT_SECRET são obrigatórios")
+	hasCredentials := dc.ClientID != "" && dc.ClientSecret != ""
+
+	var users hub.UserLookup = dc
+	if os.Getenv("DEV_AUTH") == "true" {
+		log.Print("ATENÇÃO: DEV_AUTH ativo, qualquer um entra com qualquer nome. Não use em produção.")
+		dev := devauth.Users{}
+		if hasCredentials {
+			dev.Next = dc
+		}
+		users = dev
+	} else if !hasCredentials {
+		log.Fatal("DISCORD_CLIENT_ID e DISCORD_CLIENT_SECRET são obrigatórios (ou use DEV_AUTH=true para testar fora do Discord)")
 	}
-	h := hub.New(dc)
+	h := hub.New(users)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /api/token", tokenHandler(dc))

@@ -1,10 +1,12 @@
 import { useAppSelector } from "./app/hooks";
 import { AdminControls } from "./components/AdminControls";
+import { DevLogin } from "./components/DevLogin";
 import { ErrorToast } from "./components/ErrorToast";
 import { ParticipantsPanel } from "./components/ParticipantsPanel";
 import { TeamsView } from "./components/TeamsView";
 import { Wheel } from "./components/Wheel";
 import { selectFatal, selectRoom, selectStatus } from "./features/room/roomSlice";
+import { inDiscord } from "./runtime";
 
 export function App() {
   const status = useAppSelector(selectStatus);
@@ -20,6 +22,9 @@ export function App() {
         </div>
       </div>
     );
+  }
+  if (!inDiscord && status === "idle") {
+    return <DevLogin />;
   }
   if (!room) {
     return <p className="center">Conectando...</p>;

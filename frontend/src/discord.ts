@@ -3,12 +3,12 @@ import { createAsyncThunk } from "@reduxjs/toolkit";
 import { authApi } from "./features/auth/authApi";
 import { sessionFailed, wsConnect } from "./features/room/roomSlice";
 
-export const discordSdk = new DiscordSDK(process.env.DISCORD_CLIENT_ID);
-
 // Fluxo: ready -> authorize -> /.proxy/api/token -> authenticate -> WebSocket.
 export const startSession = createAsyncThunk("session/start", async (_, { dispatch }) => {
   let step = "ready";
   try {
+    // Criado aqui porque o construtor falha fora do Discord.
+    const discordSdk = new DiscordSDK(process.env.DISCORD_CLIENT_ID);
     await discordSdk.ready();
     step = "authorize";
     const { code } = await discordSdk.commands.authorize({

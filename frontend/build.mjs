@@ -8,14 +8,15 @@ try {
 }
 
 const watch = process.argv.includes("--watch");
+const outdir = process.env.DIST_DIR ?? "dist";
 
-await mkdir("dist", { recursive: true });
-await copyFile("public/index.html", "dist/index.html");
+await mkdir(outdir, { recursive: true });
+await copyFile("public/index.html", `${outdir}/index.html`);
 
 const options = {
   entryPoints: ["src/main.tsx"],
   bundle: true,
-  outdir: "dist",
+  outdir,
   format: "esm",
   sourcemap: watch,
   minify: !watch,

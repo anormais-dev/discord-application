@@ -1,16 +1,17 @@
 import type { Middleware } from "@reduxjs/toolkit";
 import { errorReceived, stateReceived, statusChanged, wsConnect, wsSend } from "./roomSlice";
 import type { ServerMessage } from "./types";
+import { apiBase } from "../../runtime";
 
 const RECONNECT_DELAY_MS = 2000;
 
-// Abre wss://<host>/.proxy/api/ws, despacha eventos do servidor e envia comandos.
+// Abre wss://<host>/.proxy/api/ws (ou /api/ws fora do Discord), despacha eventos do servidor e envia comandos.
 export const wsMiddleware: Middleware = (store) => {
   let socket: WebSocket | null = null;
 
   const open = (accessToken: string, instanceId: string) => {
     const protocol = location.protocol === "https:" ? "wss" : "ws";
-    const url = `${protocol}://${location.host}/.proxy/api/ws?instance=${encodeURIComponent(instanceId)}`;
+    const url = `${protocol}://${location.host}${apiBase}/ws?instance=${encodeURIComponent(instanceId)}`;
     store.dispatch(statusChanged("connecting"));
 
     const ws = new WebSocket(url);
