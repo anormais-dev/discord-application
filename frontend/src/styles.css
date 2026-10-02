@@ -157,6 +157,19 @@ h3 {
   opacity: 0;
 }
 
+.monkey-head-stand {
+  opacity: 0;
+}
+
+.wheel-monkey.is-empty .monkey-head-normal,
+.wheel-monkey.is-empty .monkey-eyes {
+  opacity: 0;
+}
+
+.wheel-monkey.is-empty .monkey-head-stand {
+  opacity: 1;
+}
+
 .wheel-monkey.is-dizzy .monkey-head-normal,
 .wheel-monkey.is-dizzy .monkey-eyes {
   opacity: 0;
@@ -177,6 +190,11 @@ h3 {
 .wheel-monkey.is-winner .monkey-head-happy {
   opacity: 1;
   animation: happy-monkey-bob 700ms ease-in-out infinite;
+}
+
+.wheel-monkey.is-empty .monkey-head-happy {
+  opacity: 0;
+  animation: none;
 }
 
 .monkey-eyes {

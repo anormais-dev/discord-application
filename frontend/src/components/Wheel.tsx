@@ -33,6 +33,8 @@ export function Wheel() {
   const [landed, setLanded] = useState<string | null>(null);
 
   const spin = room?.spin ?? null;
+  const wheelIsEmpty = room?.phase === "lobby" && room.participants.length === 0 && room.pool.length === 0;
+  const celebrationActive = !!landed && !!room && room.phase !== "lobby";
   const ids = spin ? spin.poolSnapshot : (room?.pool ?? []);
   const names = ids.map((id) => byId[id]?.name ?? "?");
 
@@ -111,10 +113,11 @@ export function Wheel() {
         <canvas ref={canvasRef} className="wheel-canvas" />
         <div
           ref={monkeyRef}
-          className={`wheel-monkey${dizzy ? " is-dizzy" : ""}${landed ? " is-winner" : ""}`}
+          className={`wheel-monkey${wheelIsEmpty ? " is-empty" : ""}${dizzy ? " is-dizzy" : ""}${celebrationActive ? " is-winner" : ""}`}
           aria-hidden="true"
         >
           <img className="monkey-head monkey-head-normal" src="/images/monkey-head.png" alt="" />
+          <img className="monkey-head monkey-head-stand" src="/images/stand-monkey-head.png" alt="" />
           <img className="monkey-head monkey-head-dizzy" src="/images/dizzy-monkey-head.png" alt="" />
           <img className="monkey-eyes" src="/images/monkey-eye.png" alt="" />
           <img className="monkey-spiral-eye spiral-eye-left" src="/images/espiral-eye.png" alt="" />
@@ -125,7 +128,7 @@ export function Wheel() {
             <img className="celebration-confetti" src="/images/confetti.png" alt="" />
           </div>
         </div>
-        {landed && (
+        {celebrationActive && (
           <div className="generated-confetti" aria-hidden="true">
             {CONFETTI_PIECES.map((piece, index) => (
               <span
@@ -138,7 +141,7 @@ export function Wheel() {
         )}
       </div>
       <p className="wheel-result" aria-live="polite">
-        {landed ? `Sorteado: ${byId[landed]?.name ?? "?"}` : spin ? "Girando..." : " "}
+        {celebrationActive && landed ? `Sorteado: ${byId[landed]?.name ?? "?"}` : spin ? "Girando..." : " "}
       </p>
     </div>
   );
