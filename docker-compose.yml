@@ -7,6 +7,7 @@ services:
     command: sh -c "npm ci && npm run dev"
     environment:
       DIST_DIR: /dist
+      DEV_AUTH: "true"
     volumes:
       - ./frontend:/app
       # node_modules e build ficam em volumes do Docker, não na sua máquina.

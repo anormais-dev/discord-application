@@ -8,6 +8,7 @@ export default defineConfig({
     entry: { index: "./src/main.tsx" },
     define: {
       "process.env.DISCORD_CLIENT_ID": JSON.stringify(process.env.DISCORD_CLIENT_ID ?? ""),
+      "process.env.DEV_AUTH": JSON.stringify(process.env.DEV_AUTH ?? ""),
     },
   },
   html: {

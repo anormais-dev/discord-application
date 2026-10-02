@@ -4,12 +4,12 @@ import { App } from "./App";
 import { store } from "./store";
 import { startSession } from "./services/discord";
 import { savedDevName, startDevSession } from "./services/devSession";
-import { inDiscord } from "./utils/runtime";
+import { devAuth, inDiscord } from "./utils/runtime";
 import "./styles.css";
 
 if (inDiscord) {
   store.dispatch(startSession());
-} else {
+} else if (devAuth) {
   const name = savedDevName();
   if (name) store.dispatch(startDevSession(name));
 }
