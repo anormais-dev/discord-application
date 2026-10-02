@@ -24,7 +24,7 @@ Com `DEV_AUTH=true`, backend e frontend aceitam qualquer nome sem login. Sem ess
 
 ## Rodar dentro do Discord
 
-1. Defina as variáveis de ambiente `PORT` (obrigatória), `DISCORD_CLIENT_ID` e `DISCORD_CLIENT_SECRET` (as duas últimas vêm do Developer Portal, aba **OAuth2**; não é o token do bot). Backend e frontend leem só do ambiente; o `make` exporta o que estiver num `.env` na raiz, então dá para copiar o `.env.example` para `.env` e preencher.
+1. Defina as variáveis de ambiente `PORT` (obrigatória), `DISCORD_CLIENT_ID` e `DISCORD_CLIENT_SECRET` (as duas últimas vêm do Developer Portal, aba **OAuth2**; não é o token do bot). O backend lê do ambiente e o frontend busca o client ID no backend (`GET /api/config`); o `make` exporta o que estiver num `.env` na raiz, então dá para copiar o `.env.example` para `.env` e preencher.
 2. No Developer Portal: ative **Activities**, adicione o redirect `https://127.0.0.1` em OAuth2 e, em **URL Mappings**, aponte `/` para o domínio do tunnel.
 3. `make dev` (precisa de Go e Node).
 4. `cloudflared tunnel --protocol http2 --url http://localhost:<PORT>` e use o domínio gerado no URL Mapping.
@@ -36,7 +36,7 @@ Ficam no `.env` (copie de `.env.example`).
 
 | Variável | Obrigatória | Para que serve |
 |---|---|---|
-| `DISCORD_CLIENT_ID` | Para rodar no Discord | ID da aplicação, na aba **OAuth2** do Developer Portal. Também vai embutido no bundle do frontend durante o build. |
+| `DISCORD_CLIENT_ID` | Para rodar no Discord | ID da aplicação, na aba **OAuth2** do Developer Portal. Só o backend lê; o frontend recebe pelo `GET /api/config`, então o build não precisa dele. |
 | `DISCORD_CLIENT_SECRET` | Para rodar no Discord | Secret da aba **OAuth2**. Não é o token do bot. |
 | `PORT` | Sim | Porta HTTP do backend. Não tem padrão no código nem na imagem; o exemplo usa `3000`. |
 | `DEV_AUTH` | Não | Com `true`, aceita qualquer nome sem login do Discord. Só para desenvolvimento, nunca em produção. |
@@ -52,7 +52,7 @@ Os arquivos de produção ficam em `infra/`. O `docker-compose.yml` e o `backend
 
 | Arquivo | Para que serve |
 |---|---|
-| `infra/backend.Dockerfile` | Imagem do backend: só a API (`/api/token` e `/api/ws`). |
+| `infra/backend.Dockerfile` | Imagem do backend: só a API (`/api/config`, `/api/token` e `/api/ws`). |
 | `infra/frontend.Dockerfile` | Imagem do frontend: nginx servindo o build do Rsbuild. |
 | `infra/nginx.conf` | Cache (`index.html` sem cache, `/static/` imutável), gzip e headers básicos. |
 | `infra/stack.yml` | Stack que o Dokploy roda (Compose no modo Docker Stack). |
@@ -61,7 +61,7 @@ As imagens usam a raiz do repo como contexto. Cada Dockerfile tem um `.dockerign
 
 ```bash
 docker build -f infra/backend.Dockerfile -t backend .
-docker build -f infra/frontend.Dockerfile --build-arg DISCORD_CLIENT_ID=<id> -t frontend .
+docker build -f infra/frontend.Dockerfile -t frontend .
 ```
 
 Os builds são multi-stage, em três estágios:
