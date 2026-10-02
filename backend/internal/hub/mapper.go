@@ -2,10 +2,10 @@ package hub
 
 import (
 	"github.com/anormais-dev/discord-application/backend/internal/dto"
-	"github.com/anormais-dev/discord-application/backend/internal/roulette"
+	"github.com/anormais-dev/discord-application/backend/internal/model"
 )
 
-func toRoomResponse(r *roulette.Room) dto.RoomResponse {
+func toRoomResponse(r *model.Room) dto.RoomResponse {
 	teams := make([][]dto.ParticipantResponse, len(r.Teams))
 	for i, team := range r.Teams {
 		teams[i] = toParticipants(team)
@@ -23,7 +23,7 @@ func toRoomResponse(r *roulette.Room) dto.RoomResponse {
 	}
 }
 
-func toParticipants(ps []roulette.Participant) []dto.ParticipantResponse {
+func toParticipants(ps []model.Participant) []dto.ParticipantResponse {
 	out := make([]dto.ParticipantResponse, len(ps))
 	for i, p := range ps {
 		out[i] = dto.ParticipantResponse{
@@ -37,7 +37,7 @@ func toParticipants(ps []roulette.Participant) []dto.ParticipantResponse {
 	return out
 }
 
-func toSpin(s *roulette.SpinState) *dto.SpinResponse {
+func toSpin(s *model.Spin) *dto.SpinResponse {
 	if s == nil {
 		return nil
 	}
@@ -51,11 +51,11 @@ func toSpin(s *roulette.SpinState) *dto.SpinResponse {
 	}
 }
 
-func toFormat(f roulette.Format) dto.Format {
+func toFormat(f model.Format) dto.Format {
 	return dto.Format{Teams: f.Teams, Size: f.Size}
 }
 
-func toFormats(fs []roulette.Format) []dto.Format {
+func toFormats(fs []model.Format) []dto.Format {
 	out := make([]dto.Format, len(fs))
 	for i, f := range fs {
 		out[i] = toFormat(f)

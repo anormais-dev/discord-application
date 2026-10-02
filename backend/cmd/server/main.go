@@ -9,7 +9,9 @@ import (
 	"github.com/anormais-dev/discord-application/backend/internal/devauth"
 	"github.com/anormais-dev/discord-application/backend/internal/dto"
 	"github.com/anormais-dev/discord-application/backend/internal/hub"
+	"github.com/anormais-dev/discord-application/backend/internal/repository"
 	"github.com/anormais-dev/discord-application/backend/internal/response"
+	"github.com/anormais-dev/discord-application/backend/internal/service"
 	"github.com/anormais-dev/discord-application/backend/pkg/discord"
 )
 
@@ -29,7 +31,7 @@ func main() {
 	} else if !cfg.HasDiscordCredentials() {
 		log.Fatal("DISCORD_CLIENT_ID e DISCORD_CLIENT_SECRET são obrigatórios (ou use DEV_AUTH=true para testar fora do Discord)")
 	}
-	h := hub.New(users)
+	h := hub.New(users, service.NewRoomService(repository.NewRoomRepository()))
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /api/token", tokenHandler(dc))

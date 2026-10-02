@@ -13,7 +13,9 @@ import (
 	"github.com/coder/websocket"
 	"github.com/coder/websocket/wsjson"
 
-	"github.com/anormais-dev/discord-application/backend/internal/roulette"
+	"github.com/anormais-dev/discord-application/backend/internal/dto"
+	"github.com/anormais-dev/discord-application/backend/internal/repository"
+	"github.com/anormais-dev/discord-application/backend/internal/service"
 	"github.com/anormais-dev/discord-application/backend/pkg/discord"
 )
 
@@ -28,10 +30,10 @@ func (fakeUsers) CurrentUser(_ context.Context, token string) (*discord.User, er
 }
 
 type received struct {
-	Type    string        `json:"type"`
-	Room    roulette.Room `json:"room"`
-	You     string        `json:"you"`
-	Message string        `json:"message"`
+	Type    string           `json:"type"`
+	Room    dto.RoomResponse `json:"room"`
+	You     string           `json:"you"`
+	Message string           `json:"message"`
 }
 
 type testClient struct {
@@ -82,8 +84,9 @@ func (c *testClient) until(cond func(received) bool) received {
 }
 
 func TestHubSyncsTwoClients(t *testing.T) {
-	h := New(fakeUsers{})
-	h.CommitDelay = 50 * time.Millisecond
+	rooms := service.NewRoomService(repository.NewRoomRepository())
+	rooms.CommitDelay = 50 * time.Millisecond
+	h := New(fakeUsers{}, rooms)
 	srv := httptest.NewServer(http.HandlerFunc(h.ServeWS))
 	defer srv.Close()
 
@@ -102,21 +105,21 @@ func TestHubSyncsTwoClients(t *testing.T) {
 
 	a.send(map[string]any{"type": "set_format", "format": map[string]int{"teams": 2, "size": 1}})
 	a.send(map[string]any{"type": "spin"})
-	b.until(func(m received) bool { return m.Type == "state" && m.Room.CurrentSpin != nil })
+	b.until(func(m received) bool { return m.Type == "state" && m.Room.Spin != nil })
 	b.until(func(m received) bool { return m.Type == "state" && m.Room.Picks == 1 })
 
 	b.send(map[string]any{"type": "leave"})
 	b.until(func(m received) bool { return m.Type == "error" })
 
 	a.send(map[string]any{"type": "spin"})
-	final := b.until(func(m received) bool { return m.Type == "state" && m.Room.Phase == roulette.PhaseFinished })
+	final := b.until(func(m received) bool { return m.Type == "state" && m.Room.Phase == "finished" })
 	if len(final.Room.Teams[0]) != 1 || len(final.Room.Teams[1]) != 1 {
 		t.Fatalf("times inesperados: %+v", final.Room.Teams)
 	}
 }
 
 func TestHubRejectsInvalidToken(t *testing.T) {
-	srv := httptest.NewServer(http.HandlerFunc(New(fakeUsers{}).ServeWS))
+	srv := httptest.NewServer(http.HandlerFunc(New(fakeUsers{}, service.NewRoomService(repository.NewRoomRepository())).ServeWS))
 	defer srv.Close()
 	c := dial(t, srv, "invalido")
 	var m json.RawMessage
