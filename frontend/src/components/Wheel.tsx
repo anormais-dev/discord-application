@@ -86,7 +86,7 @@ export function Wheel() {
         setDizzy(shouldBeDizzy);
       }
 
-      const angle = progress >= 1 ? POINTER_ANGLE : POINTER_ANGLE - rotationRef.current;
+      const angle = progress >= 1 ? POINTER_ANGLE : POINTER_ANGLE + rotationRef.current;
       const pupilX = Math.cos(angle) * 6;
       const pupilY = Math.sin(angle) * 6;
       const spiralProgress = Math.max(0, Math.min(1, (progress - SPIRAL_START) / (1 - SPIRAL_START)));
