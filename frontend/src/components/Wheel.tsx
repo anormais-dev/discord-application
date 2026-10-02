@@ -5,9 +5,16 @@ import { POINTER_ANGLE, TAU, drawWheel, easeOutQuart } from "../utils/wheel";
 
 const SPIRAL_START = 0.15;
 const SPIRAL_TURNS = 4;
+const CONFETTI_PIECES = Array.from({ length: 24 }, (_, index) => ({
+  left: `${(index * 37) % 101}%`,
+  delay: `-${(index % 8) * 0.13}s`,
+  duration: `${1.2 + (index % 5) * 0.12}s`,
+  color: index % 5,
+}));
 
 interface Animation {
   key: string;
+  winnerId: string;
   from: number;
   to: number;
   startedAt: number;
@@ -32,10 +39,14 @@ export function Wheel() {
   // Começa uma animação nova quando chega um giro que ainda não foi animado.
   useEffect(() => {
     if (!spin) {
+      const finishedAnimation = animationRef.current;
+      if (finishedAnimation) {
+        rotationRef.current = finishedAnimation.to;
+        setLanded(finishedAnimation.winnerId);
+      }
       animationRef.current = null;
       dizzyRef.current = false;
       setDizzy(false);
-      setLanded(null);
       return;
     }
     const key = spin.startedAt;
@@ -49,7 +60,7 @@ export function Wheel() {
     const minimum = from + spin.rotations * TAU;
     const to = target + Math.ceil((minimum - target) / TAU) * TAU;
 
-    animationRef.current = { key, from, to, startedAt: performance.now(), durationMs: spin.durationMs };
+    animationRef.current = { key, winnerId: spin.winnerId, from, to, startedAt: performance.now(), durationMs: spin.durationMs };
     setLanded(null);
   }, [spin]);
 
@@ -98,13 +109,33 @@ export function Wheel() {
     <div className="wheel">
       <div className="wheel-stage">
         <canvas ref={canvasRef} className="wheel-canvas" />
-        <div ref={monkeyRef} className={`wheel-monkey${dizzy ? " is-dizzy" : ""}`} aria-hidden="true">
+        <div
+          ref={monkeyRef}
+          className={`wheel-monkey${dizzy ? " is-dizzy" : ""}${landed ? " is-winner" : ""}`}
+          aria-hidden="true"
+        >
           <img className="monkey-head monkey-head-normal" src="/images/monkey-head.png" alt="" />
           <img className="monkey-head monkey-head-dizzy" src="/images/dizzy-monkey-head.png" alt="" />
           <img className="monkey-eyes" src="/images/monkey-eye.png" alt="" />
           <img className="monkey-spiral-eye spiral-eye-left" src="/images/espiral-eye.png" alt="" />
           <img className="monkey-spiral-eye spiral-eye-right" src="/images/espiral-eye.png" alt="" />
+          <img className="monkey-head monkey-head-happy" src="/images/happy-monkey-head.png" alt="" />
+          <div className="celebration-cone-group">
+            <img className="celebration-cone" src="/images/cone.png" alt="" />
+            <img className="celebration-confetti" src="/images/confetti.png" alt="" />
+          </div>
         </div>
+        {landed && (
+          <div className="generated-confetti" aria-hidden="true">
+            {CONFETTI_PIECES.map((piece, index) => (
+              <span
+                key={index}
+                className={`generated-confetti-piece confetti-color-${piece.color}`}
+                style={{ left: piece.left, animationDelay: piece.delay, animationDuration: piece.duration }}
+              />
+            ))}
+          </div>
+        )}
       </div>
       <p className="wheel-result" aria-live="polite">
         {landed ? `Sorteado: ${byId[landed]?.name ?? "?"}` : spin ? "Girando..." : " "}
