@@ -2,7 +2,7 @@ import { useState, type FormEvent } from "react";
 import { useAppDispatch } from "../store/hooks";
 import { startDevSession } from "../services/devSession";
 
-export function DevLogin() {
+export function DevLoginPage() {
   const dispatch = useAppDispatch();
   const [name, setName] = useState("");
 

@@ -1,49 +1,17 @@
+import { DevLoginPage } from "./pages/DevLoginPage";
+import { ErrorPage } from "./pages/ErrorPage";
+import { LoadingPage } from "./pages/LoadingPage";
+import { RoulettePage } from "./pages/RoulettePage";
 import { useAppSelector } from "./store/hooks";
-import { AdminControls } from "./components/AdminControls";
-import { DevLogin } from "./components/DevLogin";
-import { ErrorToast } from "./components/ErrorToast";
-import { ParticipantsPanel } from "./components/ParticipantsPanel";
-import { TeamsView } from "./components/TeamsView";
-import { Wheel } from "./components/Wheel";
-import { selectFatal, selectRoom, selectStatus } from "./store/selectors";
+import { selectRoom, selectStatus } from "./store/selectors";
 import { inDiscord } from "./utils/runtime";
 
 export function App() {
   const status = useAppSelector(selectStatus);
   const room = useAppSelector(selectRoom);
-  const fatal = useAppSelector(selectFatal);
 
-  if (status === "error") {
-    return (
-      <div className="center">
-        <div>
-          <p>Não foi possível conectar ao Discord.</p>
-          {fatal && <pre className="fatal">{fatal}</pre>}
-        </div>
-      </div>
-    );
-  }
-  if (!inDiscord && status === "idle") {
-    return <DevLogin />;
-  }
-  if (!room) {
-    return <p className="center">Conectando...</p>;
-  }
-
-  return (
-    <main className="layout">
-      {status === "disconnected" && <div className="banner">Conexão perdida, reconectando...</div>}
-      <div className="stage">
-        <Wheel />
-        <AdminControls />
-      </div>
-      <aside className="side">
-        <ParticipantsPanel />
-      </aside>
-      <div className="bottom">
-        <TeamsView />
-      </div>
-      <ErrorToast />
-    </main>
-  );
+  if (status === "error") return <ErrorPage />;
+  if (!inDiscord && status === "idle") return <DevLoginPage />;
+  if (!room) return <LoadingPage />;
+  return <RoulettePage />;
 }
