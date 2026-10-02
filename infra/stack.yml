@@ -1,0 +1,55 @@
+services:
+  frontend:
+    image: ghcr.io/anormais-dev/discord-application-frontend:${IMAGE_TAG:-latest}
+    networks:
+      - dokploy-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:8080/ || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    deploy:
+      replicas: 1
+      update_config:
+        order: start-first
+        failure_action: rollback
+      restart_policy:
+        condition: on-failure
+      resources:
+        limits:
+          memory: 64M
+      labels:
+        - traefik.enable=true
+        - traefik.swarm.network=dokploy-network
+        - traefik.http.routers.roleta-frontend.rule=Host(`${DOMAIN:?}`)
+        - traefik.http.routers.roleta-frontend.entrypoints=web
+        - traefik.http.services.roleta-frontend.loadbalancer.server.port=8080
+
+  backend:
+    image: ghcr.io/anormais-dev/discord-application-backend:${IMAGE_TAG:-latest}
+    environment:
+      PORT: ${PORT:?}
+      DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID:?}
+      DISCORD_CLIENT_SECRET: ${DISCORD_CLIENT_SECRET:?}
+    networks:
+      - dokploy-network
+    deploy:
+      replicas: 1
+      update_config:
+        order: stop-first
+        failure_action: rollback
+      restart_policy:
+        condition: on-failure
+      resources:
+        limits:
+          memory: 256M
+      labels:
+        - traefik.enable=true
+        - traefik.swarm.network=dokploy-network
+        - traefik.http.routers.roleta-backend.rule=Host(`${DOMAIN:?}`) && PathPrefix(`/api`)
+        - traefik.http.routers.roleta-backend.entrypoints=web
+        - traefik.http.services.roleta-backend.loadbalancer.server.port=${PORT:?}
+
+networks:
+  dokploy-network:
+    external: true
