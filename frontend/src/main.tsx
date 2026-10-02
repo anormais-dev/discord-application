@@ -14,7 +14,7 @@ if (inDiscord) {
   if (name) store.dispatch(startDevSession(name));
 }
 
-createRoot(document.getElementById("root")!).render(
+createRoot(document.getElementById("main")!).render(
   <Provider store={store}>
     <App />
   </Provider>,
