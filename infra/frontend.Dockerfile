@@ -5,8 +5,7 @@ RUN npm ci
 
 FROM deps AS build
 COPY frontend/ ./
-ARG DISCORD_CLIENT_ID
-RUN DISCORD_CLIENT_ID="$DISCORD_CLIENT_ID" npm run build
+RUN npm run build
 
 FROM nginxinc/nginx-unprivileged:stable-alpine AS runtime
 COPY infra/nginx.conf /etc/nginx/conf.d/default.conf
