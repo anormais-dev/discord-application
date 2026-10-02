@@ -30,8 +30,9 @@ func Build(cfg *config.Config) (http.Handler, error) {
 	roomService := service.NewRoomService(repository.NewRoomRepository())
 
 	handlers := routes.Handlers{
-		Token: handler.NewTokenHandler(authService),
-		WS:    handler.NewWSHandler(authService, roomService),
+		Config: handler.NewConfigHandler(cfg.DiscordClientID),
+		Token:  handler.NewTokenHandler(authService),
+		WS:     handler.NewWSHandler(authService, roomService),
 	}
 
 	return routes.NewRouter(handlers, cfg.StaticDir), nil
