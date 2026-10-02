@@ -5,11 +5,11 @@ dev-frontend:
 	cd frontend && npm run dev
 
 dev-backend:
-	cd backend && go run ./cmd/server
+	cd backend && go run ./cmd/api
 
 build:
 	cd frontend && npm run build
-	cd backend && go build -o ../bin/server ./cmd/server
+	cd backend && go build -o ../bin/server ./cmd/api
 
 test:
 	cd backend && go test ./...
