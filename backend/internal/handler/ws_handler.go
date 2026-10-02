@@ -1,4 +1,4 @@
-package hub
+package handler
 
 import (
 	"context"
@@ -22,12 +22,8 @@ const (
 	writeTimeout = 5 * time.Second
 )
 
-type UserLookup interface {
-	CurrentUser(ctx context.Context, accessToken string) (*discord.User, error)
-}
-
-type Hub struct {
-	users UserLookup
+type WSHandler struct {
+	auth  *service.AuthService
 	rooms *service.RoomService
 }
 
@@ -36,12 +32,12 @@ type client struct {
 	send chan []byte
 }
 
-func New(users UserLookup, rooms *service.RoomService) *Hub {
-	return &Hub{users: users, rooms: rooms}
+func NewWSHandler(auth *service.AuthService, rooms *service.RoomService) *WSHandler {
+	return &WSHandler{auth: auth, rooms: rooms}
 }
 
 // ServeWS trata GET /api/ws?instance=<instanceId>.
-func (h *Hub) ServeWS(w http.ResponseWriter, r *http.Request) {
+func (h *WSHandler) ServeWS(w http.ResponseWriter, r *http.Request) {
 	instance := r.URL.Query().Get("instance")
 	if instance == "" {
 		http.Error(w, "instance obrigatório", http.StatusBadRequest)
@@ -82,7 +78,7 @@ func (h *Hub) ServeWS(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *Hub) authenticate(ctx context.Context, conn *websocket.Conn) (*discord.User, error) {
+func (h *WSHandler) authenticate(ctx context.Context, conn *websocket.Conn) (*discord.User, error) {
 	ctx, cancel := context.WithTimeout(ctx, authTimeout)
 	defer cancel()
 	var msg dto.WSRequest
@@ -92,10 +88,10 @@ func (h *Hub) authenticate(ctx context.Context, conn *websocket.Conn) (*discord.
 	if msg.Type != "auth" || msg.AccessToken == "" {
 		return nil, errors.New("primeira mensagem precisa ser auth")
 	}
-	return h.users.CurrentUser(ctx, msg.AccessToken)
+	return h.auth.CurrentUser(ctx, msg.AccessToken)
 }
 
-func (h *Hub) handle(instance string, c *client, msg dto.WSRequest) error {
+func (h *WSHandler) handle(instance string, c *client, msg dto.WSRequest) error {
 	uid := c.user.ID
 	switch msg.Type {
 	case "join":

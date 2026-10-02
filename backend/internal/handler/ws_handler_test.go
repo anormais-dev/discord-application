@@ -1,4 +1,4 @@
-package hub
+package handler
 
 import (
 	"context"
@@ -19,10 +19,17 @@ import (
 	"github.com/anormais-dev/discord-application/backend/pkg/discord"
 )
 
-// fakeUsers usa o próprio token como ID do usuário.
-type fakeUsers struct{}
+// fakeDiscord usa o próprio token como ID do usuário.
+type fakeDiscord struct{}
 
-func (fakeUsers) CurrentUser(_ context.Context, token string) (*discord.User, error) {
+func (fakeDiscord) ExchangeCode(_ context.Context, code string) (string, error) {
+	if code == "invalido" {
+		return "", errors.New("code inválido")
+	}
+	return "token-" + code, nil
+}
+
+func (fakeDiscord) CurrentUser(_ context.Context, token string) (*discord.User, error) {
 	if token == "invalido" {
 		return nil, errors.New("token inválido")
 	}
@@ -83,10 +90,10 @@ func (c *testClient) until(cond func(received) bool) received {
 	}
 }
 
-func TestHubSyncsTwoClients(t *testing.T) {
+func TestWSSyncsTwoClients(t *testing.T) {
 	rooms := service.NewRoomService(repository.NewRoomRepository())
 	rooms.CommitDelay = 50 * time.Millisecond
-	h := New(fakeUsers{}, rooms)
+	h := NewWSHandler(service.NewAuthService(fakeDiscord{}, false), rooms)
 	srv := httptest.NewServer(http.HandlerFunc(h.ServeWS))
 	defer srv.Close()
 
@@ -118,8 +125,8 @@ func TestHubSyncsTwoClients(t *testing.T) {
 	}
 }
 
-func TestHubRejectsInvalidToken(t *testing.T) {
-	srv := httptest.NewServer(http.HandlerFunc(New(fakeUsers{}, service.NewRoomService(repository.NewRoomRepository())).ServeWS))
+func TestWSRejectsInvalidToken(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(NewWSHandler(service.NewAuthService(fakeDiscord{}, false), service.NewRoomService(repository.NewRoomRepository())).ServeWS))
 	defer srv.Close()
 	c := dial(t, srv, "invalido")
 	var m json.RawMessage

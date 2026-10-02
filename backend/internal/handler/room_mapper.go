@@ -1,4 +1,4 @@
-package hub
+package handler
 
 import (
 	"github.com/anormais-dev/discord-application/backend/internal/dto"
