@@ -9,8 +9,8 @@ import (
 	"strings"
 
 	"github.com/anormais-dev/discord-application/backend/internal/devauth"
-	"github.com/anormais-dev/discord-application/backend/internal/discord"
 	"github.com/anormais-dev/discord-application/backend/internal/hub"
+	"github.com/anormais-dev/discord-application/backend/pkg/discord"
 )
 
 func main() {

@@ -13,8 +13,8 @@ import (
 	"github.com/coder/websocket"
 	"github.com/coder/websocket/wsjson"
 
-	"github.com/anormais-dev/discord-application/backend/internal/discord"
 	"github.com/anormais-dev/discord-application/backend/internal/roulette"
+	"github.com/anormais-dev/discord-application/backend/pkg/discord"
 )
 
 const (

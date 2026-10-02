@@ -1,4 +1,3 @@
-// Package discord faz as chamadas REST ao Discord usadas pela Activity.
 package discord
 
 import (
@@ -35,7 +34,6 @@ type User struct {
 	Avatar     string `json:"avatar"`
 }
 
-// DisplayName devolve o nome exibido no Discord, ou o username se não houver.
 func (u *User) DisplayName() string {
 	if u.GlobalName != "" {
 		return u.GlobalName
@@ -43,7 +41,6 @@ func (u *User) DisplayName() string {
 	return u.Username
 }
 
-// AvatarURL devolve a URL do avatar, ou o avatar padrão do Discord.
 func (u *User) AvatarURL() string {
 	if u.Avatar != "" {
 		return fmt.Sprintf("https://cdn.discordapp.com/avatars/%s/%s.png?size=128", u.ID, u.Avatar)
@@ -52,7 +49,6 @@ func (u *User) AvatarURL() string {
 	return fmt.Sprintf("https://cdn.discordapp.com/embed/avatars/%d.png", (id>>22)%6)
 }
 
-// ExchangeCode troca o code do SDK por um access token.
 func (c *Client) ExchangeCode(ctx context.Context, code string) (string, error) {
 	form := url.Values{
 		"client_id":     {c.ClientID},
@@ -75,7 +71,6 @@ func (c *Client) ExchangeCode(ctx context.Context, code string) (string, error) 
 	return body.AccessToken, nil
 }
 
-// CurrentUser devolve o usuário dono do access token.
 func (c *Client) CurrentUser(ctx context.Context, accessToken string) (*User, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, apiBase+"/users/@me", nil)
 	if err != nil {

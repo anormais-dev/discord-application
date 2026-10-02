@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/anormais-dev/discord-application/backend/internal/discord"
+	"github.com/anormais-dev/discord-application/backend/pkg/discord"
 )
 
 // TokenPrefix marca um token de desenvolvimento: "dev:<nome>".
