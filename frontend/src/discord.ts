@@ -2,6 +2,7 @@ import { DiscordSDK } from "@discord/embedded-app-sdk";
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { authApi } from "./features/auth/authApi";
 import { sessionFailed, wsConnect } from "./features/room/roomSlice";
+import { describe } from "./utils/errors";
 
 // Fluxo: ready -> authorize -> /.proxy/api/token -> authenticate -> WebSocket.
 export const startSession = createAsyncThunk("session/start", async (_, { dispatch }) => {
@@ -29,12 +30,3 @@ export const startSession = createAsyncThunk("session/start", async (_, { dispat
     throw err;
   }
 });
-
-function describe(err: unknown): string {
-  if (err instanceof Error) return err.message;
-  try {
-    return JSON.stringify(err);
-  } catch {
-    return String(err);
-  }
-}

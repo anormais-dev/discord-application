@@ -6,7 +6,7 @@ import { ParticipantsPanel } from "./components/ParticipantsPanel";
 import { TeamsView } from "./components/TeamsView";
 import { Wheel } from "./components/Wheel";
 import { selectFatal, selectRoom, selectStatus } from "./features/room/roomSlice";
-import { inDiscord } from "./runtime";
+import { inDiscord } from "./utils/runtime";
 
 export function App() {
   const status = useAppSelector(selectStatus);

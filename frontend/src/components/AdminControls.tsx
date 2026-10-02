@@ -1,8 +1,6 @@
 import { useAppDispatch, useAppSelector } from "../app/hooks";
 import { selectFormats, selectPermissions, selectRoom, wsSend } from "../features/room/roomSlice";
-import type { Format } from "../features/room/types";
-
-const formatLabel = (f: Format) => `${f.size}x${f.size}`;
+import { formatLabel } from "../utils/format";
 
 export function AdminControls() {
   const dispatch = useAppDispatch();

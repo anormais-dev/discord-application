@@ -4,7 +4,7 @@ import { App } from "./App";
 import { store } from "./app/store";
 import { startSession } from "./discord";
 import { savedDevName, startDevSession } from "./devSession";
-import { inDiscord } from "./runtime";
+import { inDiscord } from "./utils/runtime";
 import "./styles.css";
 
 if (inDiscord) {

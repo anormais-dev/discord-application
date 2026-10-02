@@ -1,7 +1,6 @@
 import { useAppSelector } from "../app/hooks";
 import { selectParticipantsById, selectRoom } from "../features/room/roomSlice";
-
-const teamName = (i: number) => `Time ${String.fromCharCode(65 + i)}`;
+import { teamName } from "../utils/format";
 
 export function TeamsView() {
   const room = useAppSelector(selectRoom);

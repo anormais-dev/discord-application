@@ -1,6 +1,7 @@
 import { createAction, createSelector, createSlice, type PayloadAction } from "@reduxjs/toolkit";
 import type { RootState } from "../../app/store";
-import type { ClientMessage, Format, RoomState } from "./types";
+import type { ClientMessage, Format, RoomState } from "../../types/room";
+import { formatSlots } from "../../utils/format";
 
 type Status = "idle" | "connecting" | "connected" | "disconnected" | "error";
 
@@ -69,7 +70,7 @@ export const selectParticipantsById = createSelector([selectRoom], (room) =>
 export const selectPermissions = createSelector([selectRoom, selectMe], (room, me) => {
   const isParticipant = !!room && !!me && room.participants.some((p) => p.id === me);
   const isAdmin = !!room && !!me && room.adminId === me;
-  const slots = room ? room.format.teams * room.format.size : 0;
+  const slots = room ? formatSlots(room.format) : 0;
   return {
     isParticipant,
     isAdmin,

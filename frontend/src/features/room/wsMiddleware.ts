@@ -1,7 +1,7 @@
 import type { Middleware } from "@reduxjs/toolkit";
 import { errorReceived, stateReceived, statusChanged, wsConnect, wsSend } from "./roomSlice";
-import type { ServerMessage } from "./types";
-import { apiBase } from "../../runtime";
+import type { ServerMessage } from "../../types/room";
+import { apiBase } from "../../utils/runtime";
 
 const RECONNECT_DELAY_MS = 2000;
 
