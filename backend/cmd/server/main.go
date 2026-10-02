@@ -7,7 +7,9 @@ import (
 
 	"github.com/anormais-dev/discord-application/backend/internal/config"
 	"github.com/anormais-dev/discord-application/backend/internal/devauth"
+	"github.com/anormais-dev/discord-application/backend/internal/dto"
 	"github.com/anormais-dev/discord-application/backend/internal/hub"
+	"github.com/anormais-dev/discord-application/backend/internal/response"
 	"github.com/anormais-dev/discord-application/backend/pkg/discord"
 )
 
@@ -41,20 +43,17 @@ func main() {
 // tokenHandler troca o code do SDK pelo access token, que precisa do client secret.
 func tokenHandler(dc *discord.Client) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var body struct {
-			Code string `json:"code"`
-		}
+		var body dto.TokenRequest
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil || body.Code == "" {
-			http.Error(w, "code obrigatório", http.StatusBadRequest)
+			response.Error(w, http.StatusBadRequest, "code obrigatório")
 			return
 		}
 		token, err := dc.ExchangeCode(r.Context(), body.Code)
 		if err != nil {
 			log.Printf("troca de token: %v", err)
-			http.Error(w, "falha ao trocar o code", http.StatusBadGateway)
+			response.Error(w, http.StatusBadGateway, "falha ao trocar o code")
 			return
 		}
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]string{"access_token": token})
+		response.JSON(w, http.StatusOK, dto.TokenResponse{AccessToken: token})
 	}
 }

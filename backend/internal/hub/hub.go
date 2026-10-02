@@ -13,6 +13,7 @@ import (
 	"github.com/coder/websocket"
 	"github.com/coder/websocket/wsjson"
 
+	"github.com/anormais-dev/discord-application/backend/internal/dto"
 	"github.com/anormais-dev/discord-application/backend/internal/roulette"
 	"github.com/anormais-dev/discord-application/backend/pkg/discord"
 )
@@ -54,27 +55,6 @@ type client struct {
 	send chan []byte
 }
 
-// inMessage cobre todas as mensagens que o cliente envia.
-type inMessage struct {
-	Type        string          `json:"type"`
-	AccessToken string          `json:"accessToken"`
-	Format      roulette.Format `json:"format"`
-	UserID      string          `json:"userId"`
-	Enabled     bool            `json:"enabled"`
-}
-
-type stateMessage struct {
-	Type    string            `json:"type"`
-	Room    json.RawMessage   `json:"room"`
-	You     string            `json:"you"`
-	Formats []roulette.Format `json:"formats"`
-}
-
-type errorMessage struct {
-	Type    string `json:"type"`
-	Message string `json:"message"`
-}
-
 func New(users UserLookup) *Hub {
 	return &Hub{users: users, CommitDelay: defaultCommitDelay, rooms: map[string]*roomHandle{}}
 }
@@ -111,7 +91,7 @@ func (h *Hub) ServeWS(w http.ResponseWriter, r *http.Request) {
 	go writeLoop(ctx, cancel, conn, c)
 
 	for {
-		var msg inMessage
+		var msg dto.WSRequest
 		if err := wsjson.Read(ctx, conn, &msg); err != nil {
 			return
 		}
@@ -122,7 +102,7 @@ func (h *Hub) ServeWS(w http.ResponseWriter, r *http.Request) {
 func (h *Hub) authenticate(ctx context.Context, conn *websocket.Conn) (*discord.User, error) {
 	ctx, cancel := context.WithTimeout(ctx, authTimeout)
 	defer cancel()
-	var msg inMessage
+	var msg dto.WSRequest
 	if err := wsjson.Read(ctx, conn, &msg); err != nil {
 		return nil, err
 	}
@@ -182,7 +162,7 @@ func (h *Hub) cleanup(instance string, rh *roomHandle) {
 	}
 }
 
-func (rh *roomHandle) handle(c *client, msg inMessage) {
+func (rh *roomHandle) handle(c *client, msg dto.WSRequest) {
 	rh.mu.Lock()
 	defer rh.mu.Unlock()
 
@@ -198,7 +178,7 @@ func (rh *roomHandle) handle(c *client, msg inMessage) {
 	case "leave":
 		err = rh.room.Leave(uid)
 	case "set_format":
-		err = rh.room.SetFormat(uid, msg.Format)
+		err = rh.room.SetFormat(uid, roulette.Format{Teams: msg.Format.Teams, Size: msg.Format.Size})
 	case "set_spinner":
 		err = rh.room.SetSpinner(uid, msg.UserID, msg.Enabled)
 	case "spin":
@@ -212,7 +192,7 @@ func (rh *roomHandle) handle(c *client, msg inMessage) {
 	}
 
 	if err != nil {
-		c.enqueue(mustMarshal(errorMessage{Type: "error", Message: err.Error()}))
+		c.enqueue(mustMarshal(dto.ErrorMessage{Type: "error", Message: err.Error()}))
 		return
 	}
 	rh.broadcastState()
@@ -229,13 +209,14 @@ func (rh *roomHandle) commitSpin() {
 
 // broadcastState envia o estado para todos. Precisa ser chamado com rh.mu travado.
 func (rh *roomHandle) broadcastState() {
-	room := mustMarshal(rh.room)
+	room := toRoomResponse(rh.room)
+	formats := toFormats(roulette.Formats)
 	for c := range rh.clients {
-		c.enqueue(mustMarshal(stateMessage{
+		c.enqueue(mustMarshal(dto.StateMessage{
 			Type:    "state",
 			Room:    room,
 			You:     c.user.ID,
-			Formats: roulette.Formats,
+			Formats: formats,
 		}))
 	}
 }
