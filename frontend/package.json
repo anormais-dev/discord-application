@@ -3,8 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "node build.mjs --watch",
-    "build": "node build.mjs",
+    "dev": "rsbuild build --watch --no-env",
+    "build": "rsbuild build --no-env",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -15,9 +15,11 @@
     "react-redux": "^9.3.0"
   },
   "devDependencies": {
+    "@rsbuild/core": "^2.2.11",
+    "@rsbuild/plugin-react": "^2.1.1",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
-    "esbuild": "^0.28.2",
+    "rsbuild-plugin-html-minifier-terser": "^1.1.5",
     "typescript": "^7.0.2"
   }
 }
