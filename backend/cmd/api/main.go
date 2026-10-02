@@ -9,7 +9,10 @@ import (
 )
 
 func main() {
-	cfg := config.Load()
+	cfg, err := config.Load()
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	app, err := server.Build(cfg)
 	if err != nil {
