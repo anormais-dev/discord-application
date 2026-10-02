@@ -1,4 +1,4 @@
-import { wsConnect } from "./features/room/roomSlice";
+import { wsConnect } from "./store/roomSlice";
 
 // Modo de desenvolvimento fora do Discord. Só funciona com o backend rodando com DEV_AUTH=true.
 // Todas as abas entram na mesma roleta; o nome fica salvo por aba.

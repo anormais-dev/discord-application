@@ -1,7 +1,7 @@
 import { DiscordSDK } from "@discord/embedded-app-sdk";
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { authApi } from "./features/auth/authApi";
-import { sessionFailed, wsConnect } from "./features/room/roomSlice";
+import { sessionFailed, wsConnect } from "./store/roomSlice";
 import { describe } from "./utils/errors";
 
 // Fluxo: ready -> authorize -> /.proxy/api/token -> authenticate -> WebSocket.

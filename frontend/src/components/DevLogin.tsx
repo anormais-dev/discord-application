@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { useAppDispatch } from "../app/hooks";
+import { useAppDispatch } from "../store/hooks";
 import { startDevSession } from "../devSession";
 
 export function DevLogin() {

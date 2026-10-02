@@ -1,7 +1,7 @@
 import { configureStore } from "@reduxjs/toolkit";
 import { authApi } from "../features/auth/authApi";
-import { roomReducer } from "../features/room/roomSlice";
-import { wsMiddleware } from "../features/room/wsMiddleware";
+import { roomReducer } from "./roomSlice";
+import { wsMiddleware } from "./wsMiddleware";
 
 export const store = configureStore({
   reducer: {

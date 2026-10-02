@@ -1,11 +1,11 @@
-import { useAppSelector } from "./app/hooks";
+import { useAppSelector } from "./store/hooks";
 import { AdminControls } from "./components/AdminControls";
 import { DevLogin } from "./components/DevLogin";
 import { ErrorToast } from "./components/ErrorToast";
 import { ParticipantsPanel } from "./components/ParticipantsPanel";
 import { TeamsView } from "./components/TeamsView";
 import { Wheel } from "./components/Wheel";
-import { selectFatal, selectRoom, selectStatus } from "./features/room/roomSlice";
+import { selectFatal, selectRoom, selectStatus } from "./store/selectors";
 import { inDiscord } from "./utils/runtime";
 
 export function App() {

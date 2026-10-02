@@ -1,7 +1,7 @@
 import { createRoot } from "react-dom/client";
 import { Provider } from "react-redux";
 import { App } from "./App";
-import { store } from "./app/store";
+import { store } from "./store";
 import { startSession } from "./discord";
 import { savedDevName, startDevSession } from "./devSession";
 import { inDiscord } from "./utils/runtime";

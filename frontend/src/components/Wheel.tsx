@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { useAppSelector } from "../app/hooks";
-import { selectParticipantsById, selectRoom } from "../features/room/roomSlice";
+import { useAppSelector } from "../store/hooks";
+import { selectParticipantsById, selectRoom } from "../store/selectors";
 
 const TAU = Math.PI * 2;
 // O ponteiro fica no topo da roda.

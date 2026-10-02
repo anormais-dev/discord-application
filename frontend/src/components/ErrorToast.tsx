@@ -1,6 +1,7 @@
 import { useEffect } from "react";
-import { useAppDispatch, useAppSelector } from "../app/hooks";
-import { errorCleared, selectError } from "../features/room/roomSlice";
+import { useAppDispatch, useAppSelector } from "../store/hooks";
+import { errorCleared } from "../store/roomSlice";
+import { selectError } from "../store/selectors";
 
 const TOAST_MS = 3000;
 

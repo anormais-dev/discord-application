@@ -1,5 +1,5 @@
-import { useAppSelector } from "../app/hooks";
-import { selectParticipantsById, selectRoom } from "../features/room/roomSlice";
+import { useAppSelector } from "../store/hooks";
+import { selectParticipantsById, selectRoom } from "../store/selectors";
 import { teamName } from "../utils/format";
 
 export function TeamsView() {

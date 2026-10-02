@@ -1,5 +1,6 @@
-import { useAppDispatch, useAppSelector } from "../app/hooks";
-import { selectFormats, selectPermissions, selectRoom, wsSend } from "../features/room/roomSlice";
+import { useAppDispatch, useAppSelector } from "../store/hooks";
+import { wsSend } from "../store/roomSlice";
+import { selectFormats, selectPermissions, selectRoom } from "../store/selectors";
 import { formatLabel } from "../utils/format";
 
 export function AdminControls() {

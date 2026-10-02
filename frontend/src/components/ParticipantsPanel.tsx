@@ -1,5 +1,6 @@
-import { useAppDispatch, useAppSelector } from "../app/hooks";
-import { selectMe, selectPermissions, selectRoom, wsSend } from "../features/room/roomSlice";
+import { useAppDispatch, useAppSelector } from "../store/hooks";
+import { wsSend } from "../store/roomSlice";
+import { selectMe, selectPermissions, selectRoom } from "../store/selectors";
 
 export function ParticipantsPanel() {
   const dispatch = useAppDispatch();
