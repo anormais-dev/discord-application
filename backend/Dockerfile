@@ -8,6 +8,5 @@ RUN CGO_ENABLED=0 go build -o /server ./cmd/api
 FROM alpine:3.22
 RUN apk add --no-cache ca-certificates
 COPY --from=build /server /server
-ENV PORT=3000 STATIC_DIR=/static
-EXPOSE 3000
+ENV STATIC_DIR=/static
 ENTRYPOINT ["/server"]
