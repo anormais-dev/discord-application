@@ -4,21 +4,23 @@ Discord Activity que monta times por sorteio numa roleta. Backend em Go (`backen
 
 ## Mexer no frontend sem Go e sem Discord
 
-Precisa só do Docker.
+Precisa só do Docker. O compose lê `PORT` e `DEV_AUTH` do `.env`, então copie o `.env.example` e preencha `PORT` e `DEV_AUTH=true`.
 
 ```bash
-docker compose up
+docker compose up -d
 ```
 
 Abra http://localhost:8080, digite um nome e pronto. Para simular várias pessoas na mesma roleta, abra outras abas (ou janelas anônimas) com nomes diferentes. Também dá para entrar direto pela URL: `http://localhost:8080/?user=Ana`.
 
 Edite os arquivos em `frontend/src` normalmente. O Rsbuild recompila (já minificado) em poucos segundos; depois é só recarregar a página.
 
+- Ver os logs: `docker compose logs -f`
+- Parar: `docker compose down`
 - Checar tipos: `docker compose exec frontend npm run typecheck`
-- Porta 8080 ocupada: `APP_PORT=8081 docker compose up`
+- Porta 8080 ocupada: `APP_PORT=8081 docker compose up -d`
 - Dependência nova no `package.json`: `docker compose restart frontend` (ele roda `npm ci` ao subir)
 
-Nesse modo backend e frontend rodam com `DEV_AUTH=true`, que aceita qualquer nome sem login. Sem essa variável, quem abrir o link fora do Discord vê só um aviso para entrar pela Activity. Nunca ative isso em produção.
+Com `DEV_AUTH=true`, backend e frontend aceitam qualquer nome sem login. Sem essa variável, quem abrir o link fora do Discord vê só um aviso para entrar pela Activity. Nunca ative isso em produção.
 
 ## Rodar dentro do Discord
 
@@ -36,13 +38,49 @@ Ficam no `.env` (copie de `.env.example`).
 |---|---|---|
 | `DISCORD_CLIENT_ID` | Para rodar no Discord | ID da aplicação, na aba **OAuth2** do Developer Portal. Também vai embutido no bundle do frontend durante o build. |
 | `DISCORD_CLIENT_SECRET` | Para rodar no Discord | Secret da aba **OAuth2**. Não é o token do bot. |
-| `PORT` | Sim | Porta HTTP do backend. Padrão do exemplo: `3000`. |
+| `PORT` | Sim | Porta HTTP do backend. Não tem padrão no código nem na imagem; o exemplo usa `3000`. |
 | `DEV_AUTH` | Não | Com `true`, aceita qualquer nome sem login do Discord. Só para desenvolvimento, nunca em produção. |
 
 Duas variáveis opcionais não aparecem no `.env.example` porque o padrão já funciona:
 
 - `STATIC_DIR`: pasta com o build do frontend que o backend serve. Padrão: `../frontend/dist`.
-- `APP_PORT`: porta exposta pelo `docker compose up`. Padrão: `8080`.
+- `APP_PORT`: porta exposta pelo `docker compose up -d`. Padrão: `8080`.
+
+## Produção
+
+Os arquivos de produção ficam em `infra/`. O `docker-compose.yml` e o `backend/Dockerfile` são só de desenvolvimento.
+
+| Arquivo | Para que serve |
+|---|---|
+| `infra/backend.Dockerfile` | Imagem do backend: só a API (`/api/token` e `/api/ws`). |
+| `infra/frontend.Dockerfile` | Imagem do frontend: nginx servindo o build do Rsbuild. |
+| `infra/nginx.conf` | Cache (`index.html` sem cache, `/static/` imutável), gzip e headers básicos. |
+| `infra/stack.yml` | Stack que o Dokploy roda (Compose no modo Docker Stack). |
+
+As imagens usam a raiz do repo como contexto. Cada Dockerfile tem um `.dockerignore` próprio ao lado, que manda para o build só a pasta daquele app.
+
+```bash
+docker build -f infra/backend.Dockerfile -t backend .
+docker build -f infra/frontend.Dockerfile --build-arg DISCORD_CLIENT_ID=<id> -t frontend .
+```
+
+Os builds são multi-stage, em três estágios:
+
+1. `deps`: instala as dependências (`go mod download` ou `npm ci`). Fica em cache enquanto `go.mod`/`package-lock.json` não mudarem.
+2. `build`: compila o binário Go ou o bundle do frontend. Roda na arquitetura de quem builda e gera para a do alvo, então dá para gerar `linux/arm64` sem emulação.
+3. `runtime`: imagem final mínima, só com o resultado do build e sem root.
+
+No servidor, o Traefik do Dokploy recebe as requisições e separa por caminho: `/api` vai para o backend e o resto para o frontend. O `stack.yml` lê do ambiente do serviço no Dokploy:
+
+| Variável | Para que serve |
+|---|---|
+| `DOMAIN` | Domínio público do app, usado nas regras do Traefik. |
+| `PORT` | Porta do backend dentro do container. |
+| `DISCORD_CLIENT_ID` | Igual ao do desenvolvimento. |
+| `DISCORD_CLIENT_SECRET` | Igual ao do desenvolvimento. |
+| `IMAGE_TAG` | Opcional. Tag das imagens no GHCR; padrão `latest`. |
+
+`DEV_AUTH` não existe em produção.
 
 ## Testes
 
