@@ -1,10 +1,6 @@
 package config
 
-import (
-	"bufio"
-	"os"
-	"strings"
-)
+import "os"
 
 type Config struct {
 	Port                string
@@ -15,8 +11,6 @@ type Config struct {
 }
 
 func Load() *Config {
-	loadEnvFile("../.env")
-
 	return &Config{
 		Port:                getEnv("PORT", "3000"),
 		StaticDir:           getEnv("STATIC_DIR", "../frontend/dist"),
@@ -28,31 +22,6 @@ func Load() *Config {
 
 func (c *Config) HasDiscordCredentials() bool {
 	return c.DiscordClientID != "" && c.DiscordClientSecret != ""
-}
-
-// loadEnvFile não sobrescreve o que já está no ambiente.
-func loadEnvFile(path string) {
-	f, err := os.Open(path)
-	if err != nil {
-		return
-	}
-	defer f.Close()
-
-	sc := bufio.NewScanner(f)
-	for sc.Scan() {
-		line := strings.TrimSpace(sc.Text())
-		if line == "" || strings.HasPrefix(line, "#") {
-			continue
-		}
-		key, value, ok := strings.Cut(line, "=")
-		if !ok {
-			continue
-		}
-		key = strings.TrimSpace(key)
-		if _, exists := os.LookupEnv(key); !exists {
-			os.Setenv(key, strings.Trim(strings.TrimSpace(value), `"'`))
-		}
-	}
 }
 
 func getEnv(key, fallback string) string {

@@ -1,3 +1,7 @@
+# Para rodar local, as variáveis do .env (se existir) são exportadas para os comandos abaixo.
+-include .env
+export
+
 dev:
 	$(MAKE) -j2 dev-frontend dev-backend
 
