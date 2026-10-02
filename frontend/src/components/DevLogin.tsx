@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { useAppDispatch } from "../store/hooks";
-import { startDevSession } from "../devSession";
+import { startDevSession } from "../services/devSession";
 
 export function DevLogin() {
   const dispatch = useAppDispatch();

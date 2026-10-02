@@ -1,5 +1,5 @@
 import { configureStore } from "@reduxjs/toolkit";
-import { authApi } from "../features/auth/authApi";
+import { authApi } from "../services/api";
 import { roomReducer } from "./roomSlice";
 import { wsMiddleware } from "./wsMiddleware";
 
