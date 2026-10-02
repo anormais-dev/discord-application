@@ -9,7 +9,7 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
-  contents: write
+  contents: read
   packages: write
 
 env:
@@ -19,66 +19,56 @@ jobs:
   prepare:
     runs-on: ubuntu-latest
     outputs:
-      release: ${{ steps.plan.outputs.release }}
-      version: ${{ steps.plan.outputs.version }}
-      previous: ${{ steps.plan.outputs.previous }}
+      tag: ${{ steps.plan.outputs.tag }}
       changed: ${{ steps.plan.outputs.changed }}
       unchanged: ${{ steps.plan.outputs.unchanged }}
+      any: ${{ steps.plan.outputs.any }}
     steps:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - id: plan
         run: |
-          last=$(git describe --tags --abbrev=0 --match 'v[0-9]*' 2>/dev/null || true)
+          declare -A paths=(
+            [backend]='^(backend/|infra/backend\.Dockerfile)'
+            [frontend]='^(frontend/|infra/frontend\.Dockerfile|infra/nginx\.conf)'
+          )
 
-          if [ -z "$last" ]; then
-            previous=""
-            changed="backend frontend"
-            log=$(git log --format='%s%n%b')
-            IFS=. read -r major minor patch <<< "0.0.0"
-          else
-            previous="${last#v}"
-            files=$(git diff --name-only "$last" HEAD)
-            changed=""
-            grep -qE '^(backend/|infra/backend\.Dockerfile)' <<< "$files" && changed="$changed backend"
-            grep -qE '^(frontend/|infra/frontend\.Dockerfile|infra/nginx\.conf)' <<< "$files" && changed="$changed frontend"
-            log=$(git log "$last..HEAD" --format='%s%n%b')
-            IFS=. read -r major minor patch <<< "$previous"
-          fi
+          changed=()
+          unchanged=()
+          for app in backend frontend; do
+            rev=$(docker buildx imagetools inspect "$IMAGE_PREFIX-$app:latest" --format '{{json .Image}}' 2>/dev/null \
+              | jq -r '[.. | objects | .Labels? // empty | .["org.opencontainers.image.revision"]? // empty] | first // empty')
 
-          if [ -z "$changed" ]; then
-            echo "release=false" >> "$GITHUB_OUTPUT"
-            echo "Nenhum app mudou desde $last, nada para buildar."
-            exit 0
-          fi
-
-          if grep -qE '^[a-z]+(\([^)]*\))?!:|^BREAKING CHANGE' <<< "$log"; then
-            major=$((major + 1)); minor=0; patch=0
-          elif grep -qE '^feat(\([^)]*\))?:' <<< "$log"; then
-            minor=$((minor + 1)); patch=0
-          else
-            patch=$((patch + 1))
-          fi
-
-          version="$major.$minor.$patch"
-          to_json() { jq -cn --arg s "$1" '$s | split(" ") | map(select(. != ""))'; }
-          unchanged=$(comm -23 <(printf '%s\n' backend frontend) <(tr ' ' '\n' <<< "$changed" | sort))
+            if [ -z "$rev" ] || ! git cat-file -e "$rev^{commit}" 2>/dev/null; then
+              echo "$app: sem imagem latest com revisão conhecida, vai buildar."
+              changed+=("$app")
+            elif git diff --name-only "$rev" HEAD | grep -qE "${paths[$app]}"; then
+              echo "$app: mudou desde ${rev::7}, vai buildar."
+              changed+=("$app")
+            else
+              echo "$app: sem mudança desde ${rev::7}, reaproveita a imagem."
+              unchanged+=("$app")
+            fi
+          done
 
           {
-            echo "release=true"
-            echo "version=$version"
-            echo "previous=$previous"
-            echo "changed=$(to_json "$changed")"
-            echo "unchanged=$(to_json "$(tr '\n' ' ' <<< "$unchanged")")"
+            echo "tag=${GITHUB_SHA::7}"
+            echo "changed=$(jq -cn '$ARGS.positional' --args "${changed[@]}")"
+            echo "unchanged=$(jq -cn '$ARGS.positional' --args "${unchanged[@]}")"
+            echo "any=$([ ${#changed[@]} -gt 0 ] && echo true || echo false)"
           } >> "$GITHUB_OUTPUT"
-
-          echo "Versão $version (anterior: ${previous:-nenhuma}). Buildar: $changed. Reaproveitar: ${unchanged:-nada}."
 
   build:
     needs: prepare
-    if: needs.prepare.outputs.release == 'true'
+    if: needs.prepare.outputs.any == 'true'
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -101,20 +91,18 @@ jobs:
           platforms: linux/arm64
           push: true
           tags: |
-            ${{ env.IMAGE_PREFIX }}-${{ matrix.app }}:${{ needs.prepare.outputs.version }}
-            ${{ env.IMAGE_PREFIX }}-${{ matrix.app }}:sha-${{ github.sha }}
+            ${{ env.IMAGE_PREFIX }}-${{ matrix.app }}:${{ needs.prepare.outputs.tag }}
             ${{ env.IMAGE_PREFIX }}-${{ matrix.app }}:latest
           labels: |
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
             org.opencontainers.image.revision=${{ github.sha }}
-            org.opencontainers.image.version=${{ needs.prepare.outputs.version }}
           build-args: ${{ matrix.app == 'frontend' && format('DISCORD_CLIENT_ID={0}', vars.DISCORD_CLIENT_ID) || '' }}
           cache-from: type=gha,scope=${{ matrix.app }}
           cache-to: type=gha,mode=max,scope=${{ matrix.app }}
 
-  release:
+  retag:
     needs: [prepare, build]
-    if: needs.prepare.outputs.release == 'true'
+    if: needs.prepare.outputs.any == 'true' && needs.prepare.outputs.unchanged != '[]'
     runs-on: ubuntu-latest
     steps:
       - uses: docker/setup-buildx-action@v3
@@ -128,18 +116,8 @@ jobs:
       - name: Reaproveitar imagens dos apps sem mudança
         env:
           UNCHANGED: ${{ needs.prepare.outputs.unchanged }}
-          VERSION: ${{ needs.prepare.outputs.version }}
-          PREVIOUS: ${{ needs.prepare.outputs.previous }}
+          TAG: ${{ needs.prepare.outputs.tag }}
         run: |
           for app in $(jq -r '.[]' <<< "$UNCHANGED"); do
-            docker buildx imagetools create \
-              -t "$IMAGE_PREFIX-$app:$VERSION" \
-              -t "$IMAGE_PREFIX-$app:latest" \
-              "$IMAGE_PREFIX-$app:$PREVIOUS"
+            docker buildx imagetools create -t "$IMAGE_PREFIX-$app:$TAG" "$IMAGE_PREFIX-$app:latest"
           done
-
-      - name: Criar tag e release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VERSION: ${{ needs.prepare.outputs.version }}
-        run: gh release create "v$VERSION" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "v$VERSION" --generate-notes
