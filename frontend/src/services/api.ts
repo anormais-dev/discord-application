@@ -5,10 +5,13 @@ export const authApi = createApi({
   reducerPath: "authApi",
   baseQuery: fetchBaseQuery({ baseUrl: apiBase }),
   endpoints: (build) => ({
+    getConfig: build.query<{ clientId: string }, void>({
+      query: () => "/config",
+    }),
     exchangeCode: build.mutation<{ access_token: string }, { code: string }>({
       query: (body) => ({ url: "/token", method: "POST", body }),
     }),
   }),
 });
 
-export const { useExchangeCodeMutation } = authApi;
+export const { useGetConfigQuery, useExchangeCodeMutation } = authApi;

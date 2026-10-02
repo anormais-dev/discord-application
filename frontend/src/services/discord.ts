@@ -4,16 +4,18 @@ import { authApi } from "./api";
 import { sessionFailed, wsConnect } from "../store/roomSlice";
 import { describe } from "../utils/errors";
 
-// Fluxo: ready -> authorize -> /.proxy/api/token -> authenticate -> WebSocket.
+// Fluxo: config -> ready -> authorize -> /.proxy/api/token -> authenticate -> WebSocket.
 export const startSession = createAsyncThunk("session/start", async (_, { dispatch }) => {
-  let step = "ready";
+  let step = "config";
   try {
+    const { clientId } = await dispatch(authApi.endpoints.getConfig.initiate()).unwrap();
+    step = "ready";
     // Criado aqui porque o construtor falha fora do Discord.
-    const discordSdk = new DiscordSDK(process.env.DISCORD_CLIENT_ID);
+    const discordSdk = new DiscordSDK(clientId);
     await discordSdk.ready();
     step = "authorize";
     const { code } = await discordSdk.commands.authorize({
-      client_id: process.env.DISCORD_CLIENT_ID,
+      client_id: clientId,
       response_type: "code",
       state: "",
       prompt: "none",
