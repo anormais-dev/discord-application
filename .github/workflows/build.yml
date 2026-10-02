@@ -108,7 +108,7 @@ jobs:
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
             org.opencontainers.image.revision=${{ github.sha }}
             org.opencontainers.image.version=${{ needs.prepare.outputs.version }}
-          build-args: ${{ matrix.app == 'frontend' && format('DISCORD_CLIENT_ID={0}', secrets.DISCORD_CLIENT_ID) || '' }}
+          build-args: ${{ matrix.app == 'frontend' && format('DISCORD_CLIENT_ID={0}', vars.DISCORD_CLIENT_ID) || '' }}
           cache-from: type=gha,scope=${{ matrix.app }}
           cache-to: type=gha,mode=max,scope=${{ matrix.app }}
 
