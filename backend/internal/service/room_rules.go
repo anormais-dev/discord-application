@@ -85,6 +85,17 @@ func setReady(r *model.Room, userID string, on bool) error {
 	return nil
 }
 
+func setAutoSpin(r *model.Room, userID string, on bool) error {
+	if !canSpin(r, userID) {
+		return ErrCannotSpin
+	}
+	if r.Phase == model.PhaseFinished {
+		return ErrWrongPhase
+	}
+	r.AutoSpin = on
+	return nil
+}
+
 func canSpin(r *model.Room, userID string) bool {
 	return userID != "" && (userID == r.AdminID || r.Spinners[userID])
 }
@@ -116,6 +127,19 @@ func spin(r *model.Room, rng *rand.Rand, userID string) (*model.Spin, error) {
 		return nil, ErrWrongPhase
 	}
 
+	return draw(r, rng), nil
+}
+
+// autoSpin gira sozinho entre um sorteio e outro, quando o giro automático está ligado.
+func autoSpin(r *model.Room, rng *rand.Rand) bool {
+	if !r.AutoSpin || r.Phase != model.PhaseDrafting || r.CurrentSpin != nil {
+		return false
+	}
+	draw(r, rng)
+	return true
+}
+
+func draw(r *model.Room, rng *rand.Rand) *model.Spin {
 	r.CurrentSpin = &model.Spin{
 		WinnerID:     r.Pool[rng.IntN(len(r.Pool))],
 		PoolSnapshot: slices.Clone(r.Pool),
@@ -124,7 +148,7 @@ func spin(r *model.Room, rng *rand.Rand, userID string) (*model.Spin, error) {
 		StartedAt:    time.Now(),
 		DurationMs:   int(SpinDuration.Milliseconds()),
 	}
-	return r.CurrentSpin, nil
+	return r.CurrentSpin
 }
 
 // commitSpin coloca o sorteado no próximo time. Se sobrar só uma pessoa na

@@ -91,3 +91,34 @@ func TestRoomServiceDetachInLobbyRemovesParticipant(t *testing.T) {
 		t.Fatalf("a deveria ter saído e b virado admin, veio %+v", got)
 	}
 }
+
+func TestRoomServiceAutoSpinRunsUntilFinished(t *testing.T) {
+	s := NewRoomService(repository.NewRoomRepository())
+	s.CommitDelay = 5 * time.Millisecond
+	s.AutoSpinDelay = 5 * time.Millisecond
+	a := &fakeClient{id: "a"}
+	s.Attach("abc", a)
+	for _, id := range []string{"a", "b", "c", "d", "e"} {
+		s.Join("abc", model.Participant{ID: id})
+		s.SetReady("abc", id, true)
+	}
+	s.SetFormat("abc", "a", model.Format{Teams: 2, Size: 2})
+	if err := s.SetAutoSpin("abc", "a", true); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.Spin("abc", "a"); err != nil {
+		t.Fatal(err)
+	}
+
+	deadline := time.Now().Add(time.Second)
+	for time.Now().Before(deadline) {
+		s.mu.Lock()
+		phase := a.last().Phase
+		s.mu.Unlock()
+		if phase == model.PhaseFinished {
+			return
+		}
+		time.Sleep(5 * time.Millisecond)
+	}
+	t.Fatalf("o giro automático deveria ter fechado os times")
+}
