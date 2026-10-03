@@ -36,7 +36,7 @@ export interface RoomState {
 }
 
 export type ClientMessage =
-  | { type: "auth"; accessToken: string }
+  | { type: "auth"; accessToken: string; guildId?: string }
   | { type: "join" }
   | { type: "leave" }
   | { type: "set_format"; format: Format }

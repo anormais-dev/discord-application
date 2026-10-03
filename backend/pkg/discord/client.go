@@ -32,6 +32,11 @@ type User struct {
 	Username   string `json:"username"`
 	GlobalName string `json:"global_name"`
 	Avatar     string `json:"avatar"`
+	Nick       string `json:"-"`
+}
+
+type Member struct {
+	Nick string `json:"nick"`
 }
 
 func (u *User) DisplayName() string {
@@ -83,6 +88,21 @@ func (c *Client) CurrentUser(ctx context.Context, accessToken string) (*User, er
 		return nil, fmt.Errorf("users/@me: %w", err)
 	}
 	return &u, nil
+}
+
+// GuildMember precisa do escopo guilds.members.read.
+func (c *Client) GuildMember(ctx context.Context, accessToken, guildID string) (*Member, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, apiBase+"/users/@me/guilds/"+url.PathEscape(guildID)+"/member", nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Authorization", "Bearer "+accessToken)
+
+	var m Member
+	if err := c.do(req, &m); err != nil {
+		return nil, fmt.Errorf("guild member: %w", err)
+	}
+	return &m, nil
 }
 
 func (c *Client) do(req *http.Request, out any) error {

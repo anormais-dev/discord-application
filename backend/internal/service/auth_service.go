@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"hash/fnv"
+	"log"
 	"strconv"
 	"strings"
 
@@ -23,6 +24,7 @@ var (
 type DiscordClient interface {
 	ExchangeCode(ctx context.Context, code string) (string, error)
 	CurrentUser(ctx context.Context, accessToken string) (*discord.User, error)
+	GuildMember(ctx context.Context, accessToken, guildID string) (*discord.Member, error)
 }
 
 type AuthService struct {
@@ -42,7 +44,7 @@ func (s *AuthService) ExchangeCode(ctx context.Context, code string) (string, er
 	return s.discord.ExchangeCode(ctx, code)
 }
 
-func (s *AuthService) CurrentUser(ctx context.Context, accessToken string) (*discord.User, error) {
+func (s *AuthService) CurrentUser(ctx context.Context, accessToken, guildID string) (*discord.User, error) {
 	if s.devAuth {
 		if name, ok := strings.CutPrefix(accessToken, DevTokenPrefix); ok {
 			return devUser(name)
@@ -51,7 +53,17 @@ func (s *AuthService) CurrentUser(ctx context.Context, accessToken string) (*dis
 	if s.discord == nil {
 		return nil, ErrNoDiscordClient
 	}
-	return s.discord.CurrentUser(ctx, accessToken)
+	u, err := s.discord.CurrentUser(ctx, accessToken)
+	if err != nil || guildID == "" {
+		return u, err
+	}
+
+	if m, err := s.discord.GuildMember(ctx, accessToken, guildID); err != nil {
+		log.Printf("apelido no servidor: %v", err)
+	} else {
+		u.Nick = m.Nick
+	}
+	return u, nil
 }
 
 func devUser(name string) (*discord.User, error) {
