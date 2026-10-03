@@ -189,3 +189,16 @@ func TestInvalidFormat(t *testing.T) {
 	r := newTestRoom(t, 1, model.Formats[0])
 	expectErr(t, setFormat(r, "u0", model.Format{Teams: 3, Size: 7}), ErrInvalidFormat)
 }
+
+func TestSingleTeamFormat(t *testing.T) {
+	r := newTestRoom(t, 4, model.Format{Teams: 1, Size: 3})
+	for range 3 {
+		spinAndCommit(t, r, "u0")
+	}
+	if r.Phase != model.PhaseFinished || len(r.Teams) != 1 || len(r.Teams[0]) != 3 {
+		t.Fatalf("esperado 1 time com 3, veio fase %s times %+v", r.Phase, r.Teams)
+	}
+	if len(r.Pool) != 1 {
+		t.Fatalf("deveria sobrar 1 fora do time, sobrou %d", len(r.Pool))
+	}
+}
