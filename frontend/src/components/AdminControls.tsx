@@ -1,7 +1,8 @@
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { wsSend } from "../store/roomSlice";
 import { selectFormats, selectPermissions, selectRoom } from "../store/selectors";
-import { formatLabel } from "../utils/format";
+import type { Format } from "../types/room";
+import { formatLabel, teamsLabel } from "../utils/format";
 
 export function AdminControls() {
   const dispatch = useAppDispatch();
@@ -13,27 +14,54 @@ export function AdminControls() {
   const spinning = !!room.spin;
   const missing = perms.slots - room.participants.length;
   const showSpin = perms.canSpin && room.phase !== "finished";
+  const teamCounts = [...new Set(formats.map((f) => f.teams))].sort((a, b) => a - b);
+
+  const setFormat = (format: Format) => dispatch(wsSend({ type: "set_format", format }));
+  // Trocar a quantidade de times mantém o tamanho quando ele existe no outro modo.
+  const selectTeams = (teams: number) => {
+    const options = formats.filter((f) => f.teams === teams);
+    const next = options.find((f) => f.size === room.format.size) ?? options[0];
+    if (next) setFormat(next);
+  };
 
   return (
     <section className="controls">
-      {room.phase === "lobby" && (
-        <div className="formats">
-          <span className="muted">Formato</span>
-          {perms.isAdmin ? (
-            formats.map((f) => (
-              <button
-                key={formatLabel(f)}
-                className={`chip ${f.teams === room.format.teams && f.size === room.format.size ? "active" : ""}`}
-                onClick={() => dispatch(wsSend({ type: "set_format", format: f }))}
-              >
-                {formatLabel(f)}
-              </button>
-            ))
-          ) : (
+      {room.phase === "lobby" &&
+        (perms.isAdmin ? (
+          <>
+            <div className="formats">
+              <span className="muted">Times</span>
+              {teamCounts.map((teams) => (
+                <button
+                  key={teams}
+                  className={`chip ${teams === room.format.teams ? "active" : ""}`}
+                  onClick={() => selectTeams(teams)}
+                >
+                  {teamsLabel(teams)}
+                </button>
+              ))}
+            </div>
+            <div className="formats">
+              <span className="muted">Formato</span>
+              {formats
+                .filter((f) => f.teams === room.format.teams)
+                .map((f) => (
+                  <button
+                    key={formatLabel(f)}
+                    className={`chip ${f.size === room.format.size ? "active" : ""}`}
+                    onClick={() => setFormat(f)}
+                  >
+                    {formatLabel(f)}
+                  </button>
+                ))}
+            </div>
+          </>
+        ) : (
+          <div className="formats">
+            <span className="muted">Formato</span>
             <span className="chip active">{formatLabel(room.format)}</span>
-          )}
-        </div>
-      )}
+          </div>
+        ))}
 
       <div className="actions">
         {perms.canJoin && (
