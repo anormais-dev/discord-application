@@ -124,6 +124,10 @@ func (s *RoomService) SetAutoSpin(instance, userID string, on bool) error {
 	})
 }
 
+func (s *RoomService) SetMapOpen(instance, userID string, on bool) error {
+	return s.update(instance, func(r *model.Room) error { return setMapOpen(r, userID, on) })
+}
+
 // SpinMap recebe a lista já buscada para não chamar a API com o lock travado.
 func (s *RoomService) SpinMap(instance, userID string, maps []string) error {
 	return s.update(instance, func(r *model.Room) error {

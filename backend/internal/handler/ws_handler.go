@@ -113,6 +113,8 @@ func (h *WSHandler) handle(ctx context.Context, instance string, c *client, msg 
 		return h.rooms.SetAutoSpin(instance, uid, msg.Enabled)
 	case "spin":
 		return h.rooms.Spin(instance, uid)
+	case "set_map_open":
+		return h.rooms.SetMapOpen(instance, uid, msg.Enabled)
 	case "spin_map":
 		maps, err := h.maps.CompetitiveMaps(ctx)
 		if err != nil {

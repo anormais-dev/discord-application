@@ -22,6 +22,7 @@ type Room struct {
 	Picks        int
 	MapSpin      *Spin
 	Map          string
+	MapOpen      bool
 }
 
 func NewRoom() *Room {

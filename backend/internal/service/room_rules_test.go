@@ -335,3 +335,23 @@ func TestSpinMapWithoutMaps(t *testing.T) {
 		t.Fatalf("erro = %v, esperado ErrMapsUnavailable", err)
 	}
 }
+
+func TestSetMapOpenOnlyAdminAndNotWhileSpinning(t *testing.T) {
+	r := newTestRoom(t, 2, model.Format{Teams: 1, Size: 2})
+	if err := setMapOpen(r, "u1", true); !errors.Is(err, ErrNotAdmin) {
+		t.Fatalf("erro = %v, esperado ErrNotAdmin", err)
+	}
+	if err := setMapOpen(r, "u0", true); err != nil || !r.MapOpen {
+		t.Fatalf("admin deveria abrir a roda de mapas: %v", err)
+	}
+	if _, err := spinMap(r, testRand, "u0", []string{"Ascent"}); err != nil {
+		t.Fatalf("spinMap: %v", err)
+	}
+	if err := setMapOpen(r, "u0", false); !errors.Is(err, ErrSpinInProgress) {
+		t.Fatalf("erro = %v, esperado ErrSpinInProgress", err)
+	}
+	commitMapSpin(r)
+	if err := setMapOpen(r, "u0", false); err != nil || r.MapOpen {
+		t.Fatalf("admin deveria fechar depois do giro: %v", err)
+	}
+}

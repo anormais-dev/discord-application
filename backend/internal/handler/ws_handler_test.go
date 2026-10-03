@@ -174,6 +174,11 @@ func TestWSMapSpinOnlyAdmin(t *testing.T) {
 	b := dial(t, srv, "bob")
 	b.until(func(m received) bool { return m.Type == "state" })
 
+	b.send(map[string]any{"type": "set_map_open", "enabled": true})
+	b.until(func(m received) bool { return m.Type == "error" })
+	a.send(map[string]any{"type": "set_map_open", "enabled": true})
+	b.until(func(m received) bool { return m.Type == "state" && m.Room.MapOpen })
+
 	b.send(map[string]any{"type": "spin_map"})
 	if m := b.until(func(m received) bool { return m.Type == "error" }); m.Message != service.ErrNotAdmin.Error() {
 		t.Fatalf("erro = %q, esperado %q", m.Message, service.ErrNotAdmin.Error())

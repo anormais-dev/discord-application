@@ -170,6 +170,18 @@ func spinMap(r *model.Room, rng *rand.Rand, userID string, maps []string) (*mode
 	return r.MapSpin, nil
 }
 
+// setMapOpen abre a roda de mapas para todo mundo; não fecha no meio de um giro.
+func setMapOpen(r *model.Room, userID string, on bool) error {
+	if userID != r.AdminID {
+		return ErrNotAdmin
+	}
+	if !on && r.MapSpin != nil {
+		return ErrSpinInProgress
+	}
+	r.MapOpen = on
+	return nil
+}
+
 func commitMapSpin(r *model.Room) error {
 	if r.MapSpin == nil {
 		return ErrNoSpinInProgress

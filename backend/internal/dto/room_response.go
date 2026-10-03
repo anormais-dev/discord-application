@@ -38,4 +38,5 @@ type RoomResponse struct {
 	Picks        int                     `json:"picks"`
 	MapSpin      *SpinResponse           `json:"mapSpin"`
 	Map          string                  `json:"map"`
+	MapOpen      bool                    `json:"mapOpen"`
 }
