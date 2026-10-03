@@ -63,6 +63,22 @@ export function AdminControls() {
           </div>
         ))}
 
+      {room.phase !== "finished" && (perms.canSpin || room.autoSpin) && (
+        <div className="formats">
+          <span className="muted">Giro automático</span>
+          {perms.canSpin ? (
+            <button
+              className={`chip ${room.autoSpin ? "active" : ""}`}
+              onClick={() => dispatch(wsSend({ type: "set_auto_spin", enabled: !room.autoSpin }))}
+            >
+              {room.autoSpin ? "Ligado" : "Desligado"}
+            </button>
+          ) : (
+            <span className="chip active">Ligado</span>
+          )}
+        </div>
+      )}
+
       <div className="actions">
         {perms.canJoin && (
           <button className="primary" onClick={() => dispatch(wsSend({ type: "join" }))}>
@@ -108,7 +124,8 @@ export function AdminControls() {
           {perms.notReady === 1 ? "Aguardando 1 participante ficar pronto" : `Aguardando ${perms.notReady} participantes ficarem prontos`}
         </p>
       )}
-      {room.phase === "drafting" && !perms.canSpin && <p className="muted">Aguardando o admin girar</p>}
+      {room.phase === "lobby" && room.autoSpin && <p className="muted">Depois do primeiro giro, a roleta segue girando sozinha</p>}
+      {room.phase === "drafting" && !perms.canSpin && !room.autoSpin && <p className="muted">Aguardando o admin girar</p>}
       {room.phase === "finished" && !perms.isAdmin && <p className="muted">Aguardando o admin iniciar uma nova girada</p>}
     </section>
   );
