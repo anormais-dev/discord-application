@@ -13,6 +13,7 @@ type Room struct {
 	AdminID      string
 	Spinners     map[string]bool
 	Ready        map[string]bool
+	AutoSpin     bool
 	Format       Format
 	Pool         []string
 	Teams        [][]Participant

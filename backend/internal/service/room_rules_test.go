@@ -258,3 +258,27 @@ func TestReadyRules(t *testing.T) {
 	spinAndCommit(t, r, "u0")
 	expectErr(t, setReady(r, "u0", false), ErrWrongPhase)
 }
+
+func TestAutoSpinRules(t *testing.T) {
+	r := newTestRoom(t, 5, model.Format{Teams: 2, Size: 2})
+	expectErr(t, setAutoSpin(r, "u1", true), ErrCannotSpin)
+	if err := setAutoSpin(r, "u0", true); err != nil {
+		t.Fatal(err)
+	}
+	if autoSpin(r, testRand) {
+		t.Fatalf("o primeiro giro precisa ser manual")
+	}
+	spinAndCommit(t, r, "u0")
+	if !autoSpin(r, testRand) || r.CurrentSpin == nil {
+		t.Fatalf("depois do primeiro giro deveria girar sozinho")
+	}
+	if autoSpin(r, testRand) {
+		t.Fatalf("não deveria girar com outro giro em andamento")
+	}
+	commitSpin(r)
+
+	setAutoSpin(r, "u0", false)
+	if autoSpin(r, testRand) {
+		t.Fatalf("com o automático desligado não deveria girar")
+	}
+}
