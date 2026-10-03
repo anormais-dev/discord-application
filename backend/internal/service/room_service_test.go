@@ -122,3 +122,30 @@ func TestRoomServiceAutoSpinRunsUntilFinished(t *testing.T) {
 	}
 	t.Fatalf("o giro automático deveria ter fechado os times")
 }
+
+func TestRoomServiceCommitsMapSpinAfterDelay(t *testing.T) {
+	s := NewRoomService(repository.NewRoomRepository())
+	s.CommitDelay = 10 * time.Millisecond
+	a := &fakeClient{id: "a"}
+	s.Attach("abc", a)
+	s.Join("abc", model.Participant{ID: "a"})
+
+	if err := s.SpinMap("abc", "a", []string{"Ascent", "Bind"}); err != nil {
+		t.Fatal(err)
+	}
+	if a.last().MapSpin == nil {
+		t.Fatalf("estado deveria ter o giro de mapa em andamento")
+	}
+
+	deadline := time.Now().Add(time.Second)
+	for time.Now().Before(deadline) {
+		s.mu.Lock()
+		got := a.last()
+		s.mu.Unlock()
+		if got.Map != "" && got.MapSpin == nil {
+			return
+		}
+		time.Sleep(5 * time.Millisecond)
+	}
+	t.Fatalf("o mapa deveria ter sido aplicado depois do CommitDelay")
+}

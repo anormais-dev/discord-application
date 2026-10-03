@@ -124,6 +124,18 @@ func (s *RoomService) SetAutoSpin(instance, userID string, on bool) error {
 	})
 }
 
+// SpinMap recebe a lista já buscada para não chamar a API com o lock travado.
+func (s *RoomService) SpinMap(instance, userID string, maps []string) error {
+	return s.update(instance, func(r *model.Room) error {
+		spin, err := spinMap(r, s.rng, userID, maps)
+		if err != nil {
+			return err
+		}
+		time.AfterFunc(s.CommitDelay, func() { s.commitMap(instance, r, spin) })
+		return nil
+	})
+}
+
 func (s *RoomService) Reset(instance, userID string) error {
 	return s.update(instance, func(r *model.Room) error { return reset(r, userID) })
 }
@@ -154,6 +166,20 @@ func (s *RoomService) commit(instance string, room *model.Room) {
 		return
 	}
 	s.scheduleAutoSpin(instance, room)
+	s.broadcast(instance, room)
+}
+
+// commitMap confere o giro também: um reset seguido de outro giro de mapa não pode ser fechado pelo timer antigo.
+func (s *RoomService) commitMap(instance string, room *model.Room, spin *model.Spin) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if current, err := s.repo.Get(instance); err != nil || current != room || room.MapSpin != spin {
+		return
+	}
+	if err := commitMapSpin(room); err != nil {
+		return
+	}
 	s.broadcast(instance, room)
 }
 

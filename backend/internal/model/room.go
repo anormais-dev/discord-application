@@ -20,6 +20,8 @@ type Room struct {
 	Phase        Phase
 	CurrentSpin  *Spin
 	Picks        int
+	MapSpin      *Spin
+	Map          string
 }
 
 func NewRoom() *Room {
