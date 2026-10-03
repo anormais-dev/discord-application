@@ -11,6 +11,7 @@ import (
 	"github.com/anormais-dev/discord-application/backend/internal/routes"
 	"github.com/anormais-dev/discord-application/backend/internal/service"
 	"github.com/anormais-dev/discord-application/backend/pkg/discord"
+	"github.com/anormais-dev/discord-application/backend/pkg/valorant"
 )
 
 var ErrMissingCredentials = errors.New("DISCORD_CLIENT_ID e DISCORD_CLIENT_SECRET são obrigatórios (ou use DEV_AUTH=true para testar fora do Discord)")
@@ -28,11 +29,13 @@ func Build(cfg *config.Config) (http.Handler, error) {
 
 	authService := service.NewAuthService(dc, cfg.DevAuth)
 	roomService := service.NewRoomService(repository.NewRoomRepository())
+	mapService := service.NewMapService(valorant.NewClient())
 
 	handlers := routes.Handlers{
 		Config: handler.NewConfigHandler(cfg.DiscordClientID),
+		Maps:   handler.NewMapHandler(mapService),
 		Token:  handler.NewTokenHandler(authService),
-		WS:     handler.NewWSHandler(authService, roomService),
+		WS:     handler.NewWSHandler(authService, roomService, mapService),
 	}
 
 	return routes.NewRouter(handlers, cfg.StaticDir), nil

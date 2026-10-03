@@ -22,6 +22,8 @@ func toRoomResponse(r *model.Room) dto.RoomResponse {
 		Phase:        string(r.Phase),
 		Spin:         toSpin(r.CurrentSpin),
 		Picks:        r.Picks,
+		MapSpin:      toSpin(r.MapSpin),
+		Map:          r.Map,
 	}
 }
 
