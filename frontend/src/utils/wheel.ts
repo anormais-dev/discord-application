@@ -51,12 +51,15 @@ export function drawWheel(canvas: HTMLCanvasElement, names: string[], rotation: 
 
     ctx.save();
     ctx.translate(c, c);
-    ctx.rotate(start + slice / 2);
+    const mid = start + slice / 2;
+    // Na metade esquerda o texto giraria de ponta-cabeça; vira meia volta e ancora pelo outro lado.
+    const flipped = Math.cos(mid) < 0;
+    ctx.rotate(flipped ? mid + Math.PI : mid);
     ctx.fillStyle = "#111214";
     ctx.font = `600 ${fontSize}px system-ui, sans-serif`;
-    ctx.textAlign = "right";
+    ctx.textAlign = flipped ? "left" : "right";
     ctx.textBaseline = "middle";
-    ctx.fillText(truncate(ctx, name, radius - 40), radius - 14, 0);
+    ctx.fillText(truncate(ctx, name, radius - 40), flipped ? -(radius - 14) : radius - 14, 0);
     ctx.restore();
   });
 
