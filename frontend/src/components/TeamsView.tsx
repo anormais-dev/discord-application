@@ -1,20 +1,27 @@
 import { useAppSelector } from "../store/hooks";
-import { selectParticipantsById, selectRoom } from "../store/selectors";
+import { selectMe, selectParticipantsById, selectRoom } from "../store/selectors";
 import { teamName } from "../utils/format";
 
 export function TeamsView() {
   const room = useAppSelector(selectRoom);
   const byId = useAppSelector(selectParticipantsById);
+  const me = useAppSelector(selectMe);
   if (!room || room.phase === "lobby") return null;
 
   const finished = room.phase === "finished";
   const single = room.teams.length === 1;
   const heading = finished ? (single ? "Time formado!" : "Times formados!") : single ? "Montando o time" : "Montando os times";
   const leftOut = finished ? room.pool.map((id) => byId[id]).filter(Boolean) : [];
+  const meLeftOut = !!me && leftOut.some((p) => p.id === me);
 
   return (
     <section className="panel">
       <h2>{heading}</h2>
+      {meLeftOut && (
+        <p className="notice" role="status">
+          Você não foi selecionado desta vez.
+        </p>
+      )}
       <div className="teams">
         {room.teams.map((team, i) => (
           <div key={i} className="team">

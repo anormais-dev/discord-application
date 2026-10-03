@@ -100,6 +100,15 @@ h3 {
   padding: 16px;
 }
 
+.notice {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-left: 4px solid var(--danger);
+  border-radius: 4px;
+  background: rgba(218, 55, 60, 0.15);
+  font-weight: 600;
+}
+
 .wheel {
   display: flex;
   flex-direction: column;
