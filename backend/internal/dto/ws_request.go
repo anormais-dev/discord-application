@@ -6,4 +6,5 @@ type WSRequest struct {
 	Format      Format `json:"format"`
 	UserID      string `json:"userId"`
 	Enabled     bool   `json:"enabled"`
+	GuildID     string `json:"guildId"`
 }

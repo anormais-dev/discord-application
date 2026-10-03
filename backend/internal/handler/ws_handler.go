@@ -88,7 +88,7 @@ func (h *WSHandler) authenticate(ctx context.Context, conn *websocket.Conn) (*di
 	if msg.Type != "auth" || msg.AccessToken == "" {
 		return nil, errors.New("primeira mensagem precisa ser auth")
 	}
-	return h.auth.CurrentUser(ctx, msg.AccessToken)
+	return h.auth.CurrentUser(ctx, msg.AccessToken, msg.GuildID)
 }
 
 func (h *WSHandler) handle(instance string, c *client, msg dto.WSRequest) error {
@@ -97,7 +97,7 @@ func (h *WSHandler) handle(instance string, c *client, msg dto.WSRequest) error 
 	case "join":
 		return h.rooms.Join(instance, model.Participant{
 			ID:     uid,
-			Name:   c.user.DisplayName(),
+			Name:   service.CleanName(c.user.Nick, c.user.GlobalName, c.user.Username),
 			Avatar: c.user.AvatarURL(),
 		})
 	case "leave":

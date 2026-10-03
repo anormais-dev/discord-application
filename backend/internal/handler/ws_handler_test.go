@@ -36,6 +36,10 @@ func (fakeDiscord) CurrentUser(_ context.Context, token string) (*discord.User, 
 	return &discord.User{ID: token, Username: token}, nil
 }
 
+func (fakeDiscord) GuildMember(context.Context, string, string) (*discord.Member, error) {
+	return &discord.Member{}, nil
+}
+
 type received struct {
 	Type    string           `json:"type"`
 	Room    dto.RoomResponse `json:"room"`

@@ -9,14 +9,14 @@ const RECONNECT_DELAY_MS = 2000;
 export const wsMiddleware: Middleware = (store) => {
   let socket: WebSocket | null = null;
 
-  const open = (accessToken: string, instanceId: string) => {
+  const open = (accessToken: string, instanceId: string, guildId?: string | null) => {
     const protocol = location.protocol === "https:" ? "wss" : "ws";
     const url = `${protocol}://${location.host}${apiBase}/ws?instance=${encodeURIComponent(instanceId)}`;
     store.dispatch(statusChanged("connecting"));
 
     const ws = new WebSocket(url);
     socket = ws;
-    ws.onopen = () => ws.send(JSON.stringify({ type: "auth", accessToken }));
+    ws.onopen = () => ws.send(JSON.stringify({ type: "auth", accessToken, guildId }));
     ws.onmessage = (event) => {
       const msg = JSON.parse(event.data) as ServerMessage;
       if (msg.type === "state") {
@@ -29,13 +29,13 @@ export const wsMiddleware: Middleware = (store) => {
       if (socket !== ws) return;
       socket = null;
       store.dispatch(statusChanged("disconnected"));
-      setTimeout(() => open(accessToken, instanceId), RECONNECT_DELAY_MS);
+      setTimeout(() => open(accessToken, instanceId, guildId), RECONNECT_DELAY_MS);
     };
   };
 
   return (next) => (action) => {
     if (wsConnect.match(action)) {
-      open(action.payload.accessToken, action.payload.instanceId);
+      open(action.payload.accessToken, action.payload.instanceId, action.payload.guildId);
     } else if (wsSend.match(action)) {
       if (socket?.readyState === WebSocket.OPEN) {
         socket.send(JSON.stringify(action.payload));

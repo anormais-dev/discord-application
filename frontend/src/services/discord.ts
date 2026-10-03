@@ -19,13 +19,13 @@ export const startSession = createAsyncThunk("session/start", async (_, { dispat
       response_type: "code",
       state: "",
       prompt: "none",
-      scope: ["identify"],
+      scope: ["identify", "guilds.members.read"],
     });
     step = "token";
     const { access_token } = await dispatch(authApi.endpoints.exchangeCode.initiate({ code })).unwrap();
     step = "authenticate";
     await discordSdk.commands.authenticate({ access_token });
-    dispatch(wsConnect({ accessToken: access_token, instanceId: discordSdk.instanceId }));
+    dispatch(wsConnect({ accessToken: access_token, instanceId: discordSdk.instanceId, guildId: discordSdk.guildId }));
   } catch (err) {
     console.error(`falha na etapa ${step}`, err);
     dispatch(sessionFailed(`Etapa ${step}: ${describe(err)}`));
