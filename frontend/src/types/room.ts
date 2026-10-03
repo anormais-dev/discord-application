@@ -35,6 +35,8 @@ export interface RoomState {
   phase: Phase;
   spin: SpinState | null;
   picks: number;
+  mapSpin: SpinState | null;
+  map: string;
 }
 
 export type ClientMessage =
@@ -46,6 +48,7 @@ export type ClientMessage =
   | { type: "set_ready"; enabled: boolean }
   | { type: "set_auto_spin"; enabled: boolean }
   | { type: "spin" }
+  | { type: "spin_map" }
   | { type: "reset" };
 
 export type ServerMessage =

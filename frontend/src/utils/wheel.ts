@@ -5,7 +5,7 @@ const COLORS = ["#5865f2", "#eb459e", "#57f287", "#fee75c", "#ed4245", "#3ba55c"
 
 export const easeOutQuart = (t: number) => 1 - (1 - t) ** 4;
 
-export function drawWheel(canvas: HTMLCanvasElement, names: string[], rotation: number) {
+export function drawWheel(canvas: HTMLCanvasElement, names: string[], rotation: number, emptyText = "Ninguém na roleta") {
   const dpr = window.devicePixelRatio || 1;
   const size = canvas.clientWidth;
   if (canvas.width !== size * dpr) {
@@ -28,7 +28,7 @@ export function drawWheel(canvas: HTMLCanvasElement, names: string[], rotation: 
     ctx.font = "16px system-ui, sans-serif";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText("Ninguém na roleta", c, c);
+    ctx.fillText(emptyText, c, c);
     drawPointer(ctx, c);
     return;
   }

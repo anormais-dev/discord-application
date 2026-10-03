@@ -67,6 +67,9 @@ h3 {
 
 .side {
   grid-area: side;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .bottom {
@@ -523,3 +526,7 @@ h3 {
   color: inherit;
 }
 
+
+.map-panel .wheel-monkey {
+  transform: translate(-50%, -50%) scale(0.55);
+}

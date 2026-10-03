@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useAppSelector } from "../store/hooks";
-import { selectParticipantsById, selectRoom } from "../store/selectors";
+import type { SpinState } from "../types/room";
 import { POINTER_ANGLE, TAU, drawWheel, easeOutQuart } from "../utils/wheel";
 
 const SPIRAL_START = 0.15;
@@ -21,9 +20,19 @@ interface Animation {
   durationMs: number;
 }
 
-export function Wheel() {
-  const room = useAppSelector(selectRoom);
-  const byId = useAppSelector(selectParticipantsById);
+interface WheelProps {
+  spin: SpinState | null;
+  ids: string[];
+  label: (id: string) => string;
+  empty: boolean;
+  celebrate: boolean;
+  resultPrefix: string;
+  // Resultado já decidido antes de a página abrir, mostrado sem festa.
+  settledId?: string;
+  emptyText?: string;
+}
+
+export function Wheel({ spin, ids, label, empty, celebrate, resultPrefix, settledId, emptyText }: WheelProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const monkeyRef = useRef<HTMLDivElement>(null);
   const rotationRef = useRef(0);
@@ -32,11 +41,9 @@ export function Wheel() {
   const [dizzy, setDizzy] = useState(false);
   const [landed, setLanded] = useState<string | null>(null);
 
-  const spin = room?.spin ?? null;
-  const wheelIsEmpty = room?.phase === "lobby" && room.participants.length === 0 && room.pool.length === 0;
-  const celebrationActive = !!landed && !!room && room.phase !== "lobby";
-  const ids = spin ? spin.poolSnapshot : (room?.pool ?? []);
-  const names = ids.map((id) => byId[id]?.name ?? "?");
+  const celebrationActive = !!landed && celebrate;
+  const resultId = celebrationActive ? landed : spin ? null : settledId;
+  const names = ids.map(label);
 
   // Começa uma animação nova quando chega um giro que ainda não foi animado.
   useEffect(() => {
@@ -98,14 +105,14 @@ export function Wheel() {
         monkeyRef.current.style.setProperty("--spiral-rotation", `${spiralRotation}rad`);
       }
 
-      drawWheel(canvas, names, rotationRef.current);
+      drawWheel(canvas, names, rotationRef.current, emptyText);
       if (anim && performance.now() - anim.startedAt < anim.durationMs) {
         frame = requestAnimationFrame(render);
       }
     };
     render();
     return () => cancelAnimationFrame(frame);
-  }, [names.join("\u0000"), spin]);
+  }, [names.join("\u0000"), spin, emptyText]);
 
   return (
     <div className="wheel">
@@ -113,7 +120,7 @@ export function Wheel() {
         <canvas ref={canvasRef} className="wheel-canvas" />
         <div
           ref={monkeyRef}
-          className={`wheel-monkey${wheelIsEmpty ? " is-empty" : ""}${dizzy ? " is-dizzy" : ""}${celebrationActive ? " is-winner" : ""}`}
+          className={`wheel-monkey${empty ? " is-empty" : ""}${dizzy ? " is-dizzy" : ""}${celebrationActive ? " is-winner" : ""}`}
           aria-hidden="true"
         >
           <img className="monkey-head monkey-head-normal" src="/images/monkey-head.png" alt="" />
@@ -141,7 +148,7 @@ export function Wheel() {
         )}
       </div>
       <p className="wheel-result" aria-live="polite">
-        {celebrationActive && landed ? `Sorteado: ${byId[landed]?.name ?? "?"}` : spin ? "Girando..." : " "}
+        {resultId ? `${resultPrefix}${label(resultId)}` : spin ? "Girando..." : " "}
       </p>
     </div>
   );
