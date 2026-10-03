@@ -82,6 +82,23 @@ No servidor, o Traefik do Dokploy recebe as requisições e separa por caminho: 
 
 `DEV_AUTH` não existe em produção.
 
+### Deploy
+
+O deploy é automático a cada push na `main`:
+
+1. O workflow `build` builda só os apps que mudaram e publica as imagens no GHCR com as tags `latest` e o SHA curto do commit.
+2. O job `deploy` chama o webhook do Dokploy, que redeploya o stack com o `latest` novo.
+
+Se nenhum app mudou, nada é buildado e o deploy não roda.
+
+Para funcionar:
+
+- o secret `DEPLOY_WEBHOOK` do repositório guarda a Webhook URL do serviço (aba Deployments no Dokploy);
+- o Autodeploy do serviço fica ligado, senão o Dokploy recusa o webhook;
+- o `IMAGE_TAG` fica vazio ou como `latest`.
+
+Para fazer rollback, coloque `IMAGE_TAG=<sha curto>` de um commit anterior no Dokploy e clique em Deploy. Enquanto o SHA estiver fixado, os próximos pushes redeployam ele mesmo. Depois da correção, volte para `latest`.
+
 ## Testes
 
 ```bash
