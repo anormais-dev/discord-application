@@ -119,7 +119,6 @@ export function AdminControls() {
         )}
       </div>
 
-      {room.map && <p className="muted">Mapa: {room.map}</p>}
       {room.phase === "lobby" && missing > 0 && (
         <p className="muted">
           {missing === 1 ? "Falta 1 participante" : `Faltam ${missing} participantes`} para o {formatLabel(room.format)}
