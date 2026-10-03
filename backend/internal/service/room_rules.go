@@ -102,6 +102,9 @@ func spin(r *model.Room, rng *rand.Rand, userID string) (*model.Spin, error) {
 		if len(r.Participants) < r.Format.Slots() {
 			return nil, ErrNotEnoughPlayers
 		}
+		if !allReady(r) {
+			return nil, ErrNotAllReady
+		}
 		r.Teams = make([][]model.Participant, r.Format.Teams)
 		for i := range r.Teams {
 			r.Teams[i] = []model.Participant{}
@@ -201,6 +204,15 @@ func remove(r *model.Room, userID string) {
 	if r.AdminID == userID {
 		transferAdmin(r)
 	}
+}
+
+func allReady(r *model.Room) bool {
+	for _, p := range r.Participants {
+		if !r.Ready[p.ID] {
+			return false
+		}
+	}
+	return true
 }
 
 // transferAdmin passa o admin para o participante online mais antigo.

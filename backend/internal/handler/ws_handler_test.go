@@ -119,6 +119,14 @@ func TestWSSyncsTwoClients(t *testing.T) {
 
 	a.send(map[string]any{"type": "set_format", "format": map[string]int{"teams": 2, "size": 1}})
 	a.send(map[string]any{"type": "spin"})
+	a.until(func(m received) bool { return m.Type == "error" })
+	a.send(map[string]any{"type": "set_ready", "enabled": true})
+	b.send(map[string]any{"type": "set_ready", "enabled": true})
+	c.send(map[string]any{"type": "set_ready", "enabled": true})
+	a.until(func(m received) bool {
+		return m.Type == "state" && m.Room.Ready["alice"] && m.Room.Ready["bob"] && m.Room.Ready["carol"]
+	})
+	a.send(map[string]any{"type": "spin"})
 	b.until(func(m received) bool { return m.Type == "state" && m.Room.Spin != nil })
 	b.until(func(m received) bool { return m.Type == "state" && m.Room.Picks == 1 })
 
