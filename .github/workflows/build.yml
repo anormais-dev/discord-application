@@ -120,3 +120,19 @@ jobs:
           for app in $(jq -r '.[]' <<< "$UNCHANGED"); do
             docker buildx imagetools create -t "$IMAGE_PREFIX-$app:$TAG" "$IMAGE_PREFIX-$app:latest"
           done
+
+  deploy:
+    needs: [prepare, build, retag]
+    if: needs.prepare.outputs.any == 'true' && !failure() && !cancelled()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Disparar deploy no Dokploy
+        env:
+          DEPLOY_WEBHOOK: ${{ secrets.DEPLOY_WEBHOOK }}
+        run: |
+          status=$(curl -sS -o response.json -w '%{http_code}' -X POST "$DEPLOY_WEBHOOK" \
+            -H 'Content-Type: application/json' \
+            -H 'X-GitHub-Event: push' \
+            -d "$(jq -cn --arg ref "$GITHUB_REF" --arg msg "deploy ${GITHUB_SHA::7}" '{ref: $ref, head_commit: {message: $msg}}')")
+          cat response.json
+          [ "$status" -ge 200 ] && [ "$status" -lt 300 ]
