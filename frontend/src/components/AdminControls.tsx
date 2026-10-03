@@ -107,6 +107,11 @@ export function AdminControls() {
             Nova girada
           </button>
         )}
+        {perms.isAdmin && (
+          <button className="secondary" onClick={() => dispatch(wsSend({ type: "set_map_open", enabled: true }))}>
+            Escolher mapa
+          </button>
+        )}
         {perms.canLeave && (
           <button className="secondary" onClick={() => dispatch(wsSend({ type: "leave" }))}>
             Sair
@@ -114,6 +119,7 @@ export function AdminControls() {
         )}
       </div>
 
+      {room.map && <p className="muted">Mapa: {room.map}</p>}
       {room.phase === "lobby" && missing > 0 && (
         <p className="muted">
           {missing === 1 ? "Falta 1 participante" : `Faltam ${missing} participantes`} para o {formatLabel(room.format)}

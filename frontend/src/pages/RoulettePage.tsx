@@ -1,6 +1,6 @@
 import { AdminControls } from "../components/AdminControls";
 import { ErrorToast } from "../components/ErrorToast";
-import { MapPanel } from "../components/MapPanel";
+import { MapModal } from "../components/MapModal";
 import { ParticipantsPanel } from "../components/ParticipantsPanel";
 import { PlayerWheel } from "../components/PlayerWheel";
 import { TeamsView } from "../components/TeamsView";
@@ -19,11 +19,11 @@ export function RoulettePage() {
       </div>
       <aside className="side">
         <ParticipantsPanel />
-        <MapPanel />
       </aside>
       <div className="bottom">
         <TeamsView />
       </div>
+      <MapModal />
       <ErrorToast />
     </main>
   );
