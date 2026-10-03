@@ -109,24 +109,33 @@ func spin(r *model.Room, rng *rand.Rand, userID string) (*model.Spin, error) {
 	return r.CurrentSpin, nil
 }
 
-// commitSpin coloca o sorteado no próximo time, alternando.
+// commitSpin coloca o sorteado no próximo time. Se sobrar só uma pessoa na
+// roda, ela entra direto, sem precisar de outro giro.
 func commitSpin(r *model.Room) error {
 	if r.CurrentSpin == nil {
 		return ErrNoSpinInProgress
 	}
 	winner := r.CurrentSpin.WinnerID
 	r.CurrentSpin = nil
-	r.Pool = slices.DeleteFunc(r.Pool, func(id string) bool { return id == winner })
+	assign(r, winner)
+	if r.Phase == model.PhaseDrafting && len(r.Pool) == 1 {
+		assign(r, r.Pool[0])
+	}
+	return nil
+}
+
+// assign tira da roda e coloca no próximo time, alternando.
+func assign(r *model.Room, userID string) {
+	r.Pool = slices.DeleteFunc(r.Pool, func(id string) bool { return id == userID })
 
 	team := r.Picks % r.Format.Teams
-	p := r.Participants[indexOf(r, winner)]
+	p := r.Participants[indexOf(r, userID)]
 	r.Teams[team] = append(r.Teams[team], p)
 	r.Picks++
 
 	if r.Picks == r.Format.Slots() {
 		r.Phase = model.PhaseFinished
 	}
-	return nil
 }
 
 // reset limpa inclusive os participantes; o próximo a entrar vira admin.

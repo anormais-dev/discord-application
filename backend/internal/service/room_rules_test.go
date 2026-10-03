@@ -142,7 +142,7 @@ func TestDraftAlternatesTeamsAndFinishes(t *testing.T) {
 }
 
 func TestWinnerLeavesPool(t *testing.T) {
-	r := newTestRoom(t, 4, model.Format{Teams: 2, Size: 2})
+	r := newTestRoom(t, 5, model.Format{Teams: 2, Size: 2})
 	seen := map[string]bool{}
 	for range 4 {
 		w := spinAndCommit(t, r, "u0")
@@ -154,7 +154,7 @@ func TestWinnerLeavesPool(t *testing.T) {
 }
 
 func TestLeaveRules(t *testing.T) {
-	r := newTestRoom(t, 2, model.Formats[0])
+	r := newTestRoom(t, 3, model.Formats[0])
 	spinAndCommit(t, r, "u0")
 	expectErr(t, leave(r, "u1"), ErrWrongPhase)
 	expectErr(t, join(r, model.Participant{ID: "novo"}), ErrWrongPhase)
@@ -169,7 +169,7 @@ func TestLeaveRules(t *testing.T) {
 }
 
 func TestResetClearsEverything(t *testing.T) {
-	r := newTestRoom(t, 2, model.Formats[0])
+	r := newTestRoom(t, 3, model.Formats[0])
 	expectErr(t, reset(r, "u0"), ErrWrongPhase)
 	spinAndCommit(t, r, "u0")
 	spinAndCommit(t, r, "u0")
@@ -200,5 +200,26 @@ func TestSingleTeamFormat(t *testing.T) {
 	}
 	if len(r.Pool) != 1 {
 		t.Fatalf("deveria sobrar 1 fora do time, sobrou %d", len(r.Pool))
+	}
+}
+
+func TestLastRemainingJoinsWithoutSpin(t *testing.T) {
+	r := newTestRoom(t, 4, model.Format{Teams: 2, Size: 2})
+	for range 3 {
+		spinAndCommit(t, r, "u0")
+	}
+	if r.Phase != model.PhaseFinished || len(r.Pool) != 0 {
+		t.Fatalf("o último da roda deveria entrar sozinho, fase %s pool %v", r.Phase, r.Pool)
+	}
+	if len(r.Teams[0]) != 2 || len(r.Teams[1]) != 2 {
+		t.Fatalf("times incompletos: %+v", r.Teams)
+	}
+}
+
+func TestLastRemainingWaitsWhenMorePlayersThanSlots(t *testing.T) {
+	r := newTestRoom(t, 3, model.Formats[0])
+	spinAndCommit(t, r, "u0")
+	if r.Phase != model.PhaseDrafting || len(r.Pool) != 2 {
+		t.Fatalf("com 2 na roda ainda precisa girar, fase %s pool %v", r.Phase, r.Pool)
 	}
 }
