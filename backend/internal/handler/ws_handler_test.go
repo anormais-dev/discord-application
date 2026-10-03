@@ -110,6 +110,9 @@ func TestWSSyncsTwoClients(t *testing.T) {
 	b.until(func(m received) bool { return m.Type == "state" && m.Room.AdminID == "alice" })
 	b.send(map[string]any{"type": "join"})
 	a.until(func(m received) bool { return m.Type == "state" && len(m.Room.Participants) == 2 })
+	c := dial(t, srv, "carol")
+	c.send(map[string]any{"type": "join"})
+	a.until(func(m received) bool { return m.Type == "state" && len(m.Room.Participants) == 3 })
 
 	b.send(map[string]any{"type": "spin"})
 	b.until(func(m received) bool { return m.Type == "error" })

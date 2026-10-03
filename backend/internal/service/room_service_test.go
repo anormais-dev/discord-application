@@ -50,6 +50,7 @@ func TestRoomServiceCommitsSpinAfterDelay(t *testing.T) {
 	s.Attach("abc", a)
 	s.Join("abc", model.Participant{ID: "a"})
 	s.Join("abc", model.Participant{ID: "b"})
+	s.Join("abc", model.Participant{ID: "c"})
 	s.SetFormat("abc", "a", model.Format{Teams: 2, Size: 1})
 
 	if err := s.Spin("abc", "a"); err != nil {
