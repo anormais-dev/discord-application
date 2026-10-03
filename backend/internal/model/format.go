@@ -15,6 +15,11 @@ var Formats = []Format{
 	{Teams: 2, Size: 3},
 	{Teams: 2, Size: 4},
 	{Teams: 2, Size: 5},
+	{Teams: 1, Size: 1},
+	{Teams: 1, Size: 2},
+	{Teams: 1, Size: 3},
+	{Teams: 1, Size: 4},
+	{Teams: 1, Size: 5},
 }
 
-var DefaultFormat = Formats[len(Formats)-1]
+var DefaultFormat = Format{Teams: 2, Size: 5}
