@@ -282,3 +282,76 @@ func TestAutoSpinRules(t *testing.T) {
 		t.Fatalf("com o automático desligado não deveria girar")
 	}
 }
+
+func TestSpinMapOnlyAdmin(t *testing.T) {
+	r := newTestRoom(t, 2, model.Format{Teams: 1, Size: 2})
+	if _, err := spinMap(r, testRand, "u1", []string{"Ascent"}); !errors.Is(err, ErrNotAdmin) {
+		t.Fatalf("erro = %v, esperado ErrNotAdmin", err)
+	}
+	if r.MapSpin != nil {
+		t.Fatalf("não-admin não deveria iniciar giro de mapa")
+	}
+}
+
+func TestSpinMapWorksInAnyPhaseWithoutTouchingTeams(t *testing.T) {
+	maps := []string{"Ascent", "Bind", "Haven"}
+	r := newTestRoom(t, 2, model.Format{Teams: 1, Size: 2})
+
+	for _, phase := range []model.Phase{model.PhaseLobby, model.PhaseDrafting, model.PhaseFinished} {
+		if phase == model.PhaseDrafting {
+			if _, err := spin(r, testRand, "u0"); err != nil {
+				t.Fatalf("spin: %v", err)
+			}
+		}
+		if phase == model.PhaseFinished {
+			commitSpin(r)
+		}
+		if r.Phase != phase {
+			t.Fatalf("fase = %s, esperado %s", r.Phase, phase)
+		}
+		teamSpin := r.CurrentSpin
+		s, err := spinMap(r, testRand, "u0", maps)
+		if err != nil {
+			t.Fatalf("%s: spinMap: %v", phase, err)
+		}
+		if _, err := spinMap(r, testRand, "u0", maps); !errors.Is(err, ErrSpinInProgress) {
+			t.Fatalf("%s: erro = %v, esperado ErrSpinInProgress", phase, err)
+		}
+		if err := commitMapSpin(r); err != nil {
+			t.Fatalf("%s: commitMapSpin: %v", phase, err)
+		}
+		if r.Map != s.WinnerID || !slices.Contains(maps, r.Map) || r.MapSpin != nil {
+			t.Fatalf("%s: mapa = %q, giro = %+v", phase, r.Map, r.MapSpin)
+		}
+		if r.CurrentSpin != teamSpin {
+			t.Fatalf("%s: giro de mapa não deveria mexer no giro dos times", phase)
+		}
+	}
+}
+
+func TestSpinMapWithoutMaps(t *testing.T) {
+	r := newTestRoom(t, 1, model.Format{Teams: 1, Size: 1})
+	if _, err := spinMap(r, testRand, "u0", nil); !errors.Is(err, ErrMapsUnavailable) {
+		t.Fatalf("erro = %v, esperado ErrMapsUnavailable", err)
+	}
+}
+
+func TestSetMapOpenOnlyAdminAndNotWhileSpinning(t *testing.T) {
+	r := newTestRoom(t, 2, model.Format{Teams: 1, Size: 2})
+	if err := setMapOpen(r, "u1", true); !errors.Is(err, ErrNotAdmin) {
+		t.Fatalf("erro = %v, esperado ErrNotAdmin", err)
+	}
+	if err := setMapOpen(r, "u0", true); err != nil || !r.MapOpen {
+		t.Fatalf("admin deveria abrir a roda de mapas: %v", err)
+	}
+	if _, err := spinMap(r, testRand, "u0", []string{"Ascent"}); err != nil {
+		t.Fatalf("spinMap: %v", err)
+	}
+	if err := setMapOpen(r, "u0", false); !errors.Is(err, ErrSpinInProgress) {
+		t.Fatalf("erro = %v, esperado ErrSpinInProgress", err)
+	}
+	commitMapSpin(r)
+	if err := setMapOpen(r, "u0", false); err != nil || r.MapOpen {
+		t.Fatalf("admin deveria fechar depois do giro: %v", err)
+	}
+}

@@ -17,6 +17,7 @@ import (
 	"github.com/anormais-dev/discord-application/backend/internal/repository"
 	"github.com/anormais-dev/discord-application/backend/internal/service"
 	"github.com/anormais-dev/discord-application/backend/pkg/discord"
+	"github.com/anormais-dev/discord-application/backend/pkg/valorant"
 )
 
 // fakeDiscord usa o próprio token como ID do usuário.
@@ -38,6 +39,16 @@ func (fakeDiscord) CurrentUser(_ context.Context, token string) (*discord.User, 
 
 func (fakeDiscord) GuildMember(context.Context, string, string) (*discord.Member, error) {
 	return &discord.Member{}, nil
+}
+
+type fakeValorant struct{}
+
+func (fakeValorant) Maps(context.Context) ([]valorant.Map, error) {
+	return []valorant.Map{{DisplayName: "Ascent", TacticalDescription: "A/B Sites"}, {DisplayName: "Bind", TacticalDescription: "A/B Sites"}}, nil
+}
+
+func newTestMaps() *service.MapService {
+	return service.NewMapService(fakeValorant{})
 }
 
 type received struct {
@@ -97,7 +108,7 @@ func (c *testClient) until(cond func(received) bool) received {
 func TestWSSyncsTwoClients(t *testing.T) {
 	rooms := service.NewRoomService(repository.NewRoomRepository())
 	rooms.CommitDelay = 50 * time.Millisecond
-	h := NewWSHandler(service.NewAuthService(fakeDiscord{}, false), rooms)
+	h := NewWSHandler(service.NewAuthService(fakeDiscord{}, false), rooms, newTestMaps())
 	srv := httptest.NewServer(http.HandlerFunc(h.ServeWS))
 	defer srv.Close()
 
@@ -141,12 +152,42 @@ func TestWSSyncsTwoClients(t *testing.T) {
 }
 
 func TestWSRejectsInvalidToken(t *testing.T) {
-	srv := httptest.NewServer(http.HandlerFunc(NewWSHandler(service.NewAuthService(fakeDiscord{}, false), service.NewRoomService(repository.NewRoomRepository())).ServeWS))
+	srv := httptest.NewServer(http.HandlerFunc(NewWSHandler(service.NewAuthService(fakeDiscord{}, false), service.NewRoomService(repository.NewRoomRepository()), newTestMaps()).ServeWS))
 	defer srv.Close()
 	c := dial(t, srv, "invalido")
 	var m json.RawMessage
 	err := wsjson.Read(context.Background(), c.conn, &m)
 	if websocket.CloseStatus(err) != websocket.StatusPolicyViolation {
 		t.Fatalf("esperado fechamento por policy violation, veio %v", err)
+	}
+}
+
+func TestWSMapSpinOnlyAdmin(t *testing.T) {
+	rooms := service.NewRoomService(repository.NewRoomRepository())
+	rooms.CommitDelay = 50 * time.Millisecond
+	srv := httptest.NewServer(http.HandlerFunc(NewWSHandler(service.NewAuthService(fakeDiscord{}, false), rooms, newTestMaps()).ServeWS))
+	defer srv.Close()
+
+	a := dial(t, srv, "alice")
+	a.send(map[string]any{"type": "join"})
+	a.until(func(m received) bool { return m.Type == "state" && m.Room.AdminID == "alice" })
+	b := dial(t, srv, "bob")
+	b.until(func(m received) bool { return m.Type == "state" })
+
+	b.send(map[string]any{"type": "set_map_open", "enabled": true})
+	b.until(func(m received) bool { return m.Type == "error" })
+	a.send(map[string]any{"type": "set_map_open", "enabled": true})
+	b.until(func(m received) bool { return m.Type == "state" && m.Room.MapOpen })
+
+	b.send(map[string]any{"type": "spin_map"})
+	if m := b.until(func(m received) bool { return m.Type == "error" }); m.Message != service.ErrNotAdmin.Error() {
+		t.Fatalf("erro = %q, esperado %q", m.Message, service.ErrNotAdmin.Error())
+	}
+
+	a.send(map[string]any{"type": "spin_map"})
+	b.until(func(m received) bool { return m.Type == "state" && m.Room.MapSpin != nil })
+	final := b.until(func(m received) bool { return m.Type == "state" && m.Room.Map != "" })
+	if final.Room.Map != "Ascent" && final.Room.Map != "Bind" {
+		t.Fatalf("mapa inesperado: %q", final.Room.Map)
 	}
 }

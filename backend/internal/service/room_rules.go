@@ -140,15 +140,55 @@ func autoSpin(r *model.Room, rng *rand.Rand) bool {
 }
 
 func draw(r *model.Room, rng *rand.Rand) *model.Spin {
-	r.CurrentSpin = &model.Spin{
-		WinnerID:     r.Pool[rng.IntN(len(r.Pool))],
-		PoolSnapshot: slices.Clone(r.Pool),
+	r.CurrentSpin = newSpin(rng, r.Pool)
+	return r.CurrentSpin
+}
+
+func newSpin(rng *rand.Rand, pool []string) *model.Spin {
+	return &model.Spin{
+		WinnerID:     pool[rng.IntN(len(pool))],
+		PoolSnapshot: slices.Clone(pool),
 		TargetOffset: 0.15 + 0.7*rng.Float64(),
 		Rotations:    5 + rng.IntN(3),
 		StartedAt:    time.Now(),
 		DurationMs:   int(SpinDuration.Milliseconds()),
 	}
-	return r.CurrentSpin
+}
+
+// spinMap sorteia o mapa numa roda à parte, em qualquer fase, sem mexer nos times.
+func spinMap(r *model.Room, rng *rand.Rand, userID string, maps []string) (*model.Spin, error) {
+	if userID != r.AdminID {
+		return nil, ErrNotAdmin
+	}
+	if r.MapSpin != nil {
+		return nil, ErrSpinInProgress
+	}
+	if len(maps) == 0 {
+		return nil, ErrMapsUnavailable
+	}
+	r.MapSpin = newSpin(rng, maps)
+	return r.MapSpin, nil
+}
+
+// setMapOpen abre a roda de mapas para todo mundo; não fecha no meio de um giro.
+func setMapOpen(r *model.Room, userID string, on bool) error {
+	if userID != r.AdminID {
+		return ErrNotAdmin
+	}
+	if !on && r.MapSpin != nil {
+		return ErrSpinInProgress
+	}
+	r.MapOpen = on
+	return nil
+}
+
+func commitMapSpin(r *model.Room) error {
+	if r.MapSpin == nil {
+		return ErrNoSpinInProgress
+	}
+	r.Map = r.MapSpin.WinnerID
+	r.MapSpin = nil
+	return nil
 }
 
 // commitSpin coloca o sorteado no próximo time. Se sobrar só uma pessoa na

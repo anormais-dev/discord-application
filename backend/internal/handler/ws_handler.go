@@ -25,6 +25,7 @@ const (
 type WSHandler struct {
 	auth  *service.AuthService
 	rooms *service.RoomService
+	maps  *service.MapService
 }
 
 type client struct {
@@ -32,8 +33,8 @@ type client struct {
 	send chan []byte
 }
 
-func NewWSHandler(auth *service.AuthService, rooms *service.RoomService) *WSHandler {
-	return &WSHandler{auth: auth, rooms: rooms}
+func NewWSHandler(auth *service.AuthService, rooms *service.RoomService, maps *service.MapService) *WSHandler {
+	return &WSHandler{auth: auth, rooms: rooms, maps: maps}
 }
 
 // ServeWS trata GET /api/ws?instance=<instanceId>.
@@ -72,7 +73,7 @@ func (h *WSHandler) ServeWS(w http.ResponseWriter, r *http.Request) {
 		if err := wsjson.Read(ctx, conn, &msg); err != nil {
 			return
 		}
-		if err := h.handle(instance, c, msg); err != nil {
+		if err := h.handle(ctx, instance, c, msg); err != nil {
 			c.enqueue(mustMarshal(dto.ErrorMessage{Type: "error", Message: err.Error()}))
 		}
 	}
@@ -91,7 +92,7 @@ func (h *WSHandler) authenticate(ctx context.Context, conn *websocket.Conn) (*di
 	return h.auth.CurrentUser(ctx, msg.AccessToken, msg.GuildID)
 }
 
-func (h *WSHandler) handle(instance string, c *client, msg dto.WSRequest) error {
+func (h *WSHandler) handle(ctx context.Context, instance string, c *client, msg dto.WSRequest) error {
 	uid := c.user.ID
 	switch msg.Type {
 	case "join":
@@ -112,6 +113,14 @@ func (h *WSHandler) handle(instance string, c *client, msg dto.WSRequest) error 
 		return h.rooms.SetAutoSpin(instance, uid, msg.Enabled)
 	case "spin":
 		return h.rooms.Spin(instance, uid)
+	case "set_map_open":
+		return h.rooms.SetMapOpen(instance, uid, msg.Enabled)
+	case "spin_map":
+		maps, err := h.maps.CompetitiveMaps(ctx)
+		if err != nil {
+			return err
+		}
+		return h.rooms.SpinMap(instance, uid, maps)
 	case "reset":
 		return h.rooms.Reset(instance, uid)
 	default:

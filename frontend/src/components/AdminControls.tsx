@@ -107,6 +107,11 @@ export function AdminControls() {
             Nova girada
           </button>
         )}
+        {perms.isAdmin && (
+          <button className="secondary" onClick={() => dispatch(wsSend({ type: "set_map_open", enabled: true }))}>
+            Escolher mapa
+          </button>
+        )}
         {perms.canLeave && (
           <button className="secondary" onClick={() => dispatch(wsSend({ type: "leave" }))}>
             Sair

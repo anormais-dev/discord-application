@@ -8,10 +8,14 @@ export const authApi = createApi({
     getConfig: build.query<{ clientId: string }, void>({
       query: () => "/config",
     }),
+    getMaps: build.query<string[], void>({
+      query: () => "/maps",
+      transformResponse: (res: { maps: string[] }) => res.maps,
+    }),
     exchangeCode: build.mutation<{ access_token: string }, { code: string }>({
       query: (body) => ({ url: "/token", method: "POST", body }),
     }),
   }),
 });
 
-export const { useGetConfigQuery, useExchangeCodeMutation } = authApi;
+export const { useGetConfigQuery, useGetMapsQuery, useExchangeCodeMutation } = authApi;
