@@ -19,6 +19,9 @@ func newTestRoom(t *testing.T, players int, f model.Format) *model.Room {
 		if err := join(r, model.Participant{ID: "u" + strconv.Itoa(i), Name: "User " + strconv.Itoa(i)}); err != nil {
 			t.Fatalf("join: %v", err)
 		}
+		if err := setReady(r, "u"+strconv.Itoa(i), true); err != nil {
+			t.Fatalf("ready: %v", err)
+		}
 	}
 	if players > 0 {
 		if err := setFormat(r, "u0", f); err != nil {
@@ -222,4 +225,36 @@ func TestLastRemainingWaitsWhenMorePlayersThanSlots(t *testing.T) {
 	if r.Phase != model.PhaseDrafting || len(r.Pool) != 2 {
 		t.Fatalf("com 2 na roda ainda precisa girar, fase %s pool %v", r.Phase, r.Pool)
 	}
+}
+
+func TestSpinNeedsEveryoneReady(t *testing.T) {
+	r := newTestRoom(t, 2, model.Formats[0])
+	if err := setReady(r, "u1", false); err != nil {
+		t.Fatal(err)
+	}
+	_, err := spin(r, testRand, "u0")
+	expectErr(t, err, ErrNotAllReady)
+
+	if err := join(r, model.Participant{ID: "novo"}); err != nil {
+		t.Fatal(err)
+	}
+	setReady(r, "u1", true)
+	_, err = spin(r, testRand, "u0")
+	expectErr(t, err, ErrNotAllReady)
+
+	if err := leave(r, "novo"); err != nil {
+		t.Fatal(err)
+	}
+	spinAndCommit(t, r, "u0")
+}
+
+func TestReadyRules(t *testing.T) {
+	r := newTestRoom(t, 3, model.Formats[0])
+	expectErr(t, setReady(r, "ninguem", true), ErrNotParticipant)
+	disconnect(r, "u2")
+	if r.Ready["u2"] {
+		t.Fatalf("quem sai da sala não deveria continuar pronto")
+	}
+	spinAndCommit(t, r, "u0")
+	expectErr(t, setReady(r, "u0", false), ErrWrongPhase)
 }

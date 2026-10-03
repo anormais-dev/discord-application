@@ -70,6 +70,21 @@ func setSpinner(r *model.Room, userID, target string, on bool) error {
 	return nil
 }
 
+func setReady(r *model.Room, userID string, on bool) error {
+	if r.Phase != model.PhaseLobby {
+		return ErrWrongPhase
+	}
+	if indexOf(r, userID) < 0 {
+		return ErrNotParticipant
+	}
+	if on {
+		r.Ready[userID] = true
+	} else {
+		delete(r.Ready, userID)
+	}
+	return nil
+}
+
 func canSpin(r *model.Room, userID string) bool {
 	return userID != "" && (userID == r.AdminID || r.Spinners[userID])
 }
@@ -86,6 +101,9 @@ func spin(r *model.Room, rng *rand.Rand, userID string) (*model.Spin, error) {
 	case model.PhaseLobby:
 		if len(r.Participants) < r.Format.Slots() {
 			return nil, ErrNotEnoughPlayers
+		}
+		if !allReady(r) {
+			return nil, ErrNotAllReady
 		}
 		r.Teams = make([][]model.Participant, r.Format.Teams)
 		for i := range r.Teams {
@@ -182,9 +200,19 @@ func remove(r *model.Room, userID string) {
 	r.Participants = slices.DeleteFunc(r.Participants, func(p model.Participant) bool { return p.ID == userID })
 	r.Pool = slices.DeleteFunc(r.Pool, func(id string) bool { return id == userID })
 	delete(r.Spinners, userID)
+	delete(r.Ready, userID)
 	if r.AdminID == userID {
 		transferAdmin(r)
 	}
+}
+
+func allReady(r *model.Room) bool {
+	for _, p := range r.Participants {
+		if !r.Ready[p.ID] {
+			return false
+		}
+	}
+	return true
 }
 
 // transferAdmin passa o admin para o participante online mais antigo.

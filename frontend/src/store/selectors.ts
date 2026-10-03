@@ -17,6 +17,7 @@ export const selectPermissions = createSelector([selectRoom, selectMe], (room, m
   const isParticipant = !!room && !!me && room.participants.some((p) => p.id === me);
   const isAdmin = !!room && !!me && room.adminId === me;
   const slots = room ? formatSlots(room.format) : 0;
+  const notReady = room ? room.participants.filter((p) => !room.ready[p.id]).length : 0;
   return {
     isParticipant,
     isAdmin,
@@ -25,5 +26,8 @@ export const selectPermissions = createSelector([selectRoom, selectMe], (room, m
     canLeave: isParticipant && room?.phase !== "drafting",
     slots,
     enoughPlayers: !!room && room.participants.length >= slots,
+    isReady: !!room && !!me && !!room.ready[me],
+    notReady,
+    allReady: !!room && notReady === 0,
   };
 });

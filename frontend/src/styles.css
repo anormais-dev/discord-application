@@ -7,6 +7,7 @@
   --muted: #949ba4;
   --accent: #5865f2;
   --danger: #da373c;
+  --success: #248046;
 }
 
 body {
@@ -435,6 +436,10 @@ h3 {
 
 .badge.admin {
   background: var(--accent);
+}
+
+.badge.ready {
+  background: var(--success);
 }
 
 .teams {

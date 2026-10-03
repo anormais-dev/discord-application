@@ -27,6 +27,7 @@ export interface RoomState {
   participants: Participant[];
   adminId: string;
   spinners: Record<string, boolean>;
+  ready: Record<string, boolean>;
   format: Format;
   pool: string[];
   teams: Participant[][];
@@ -41,6 +42,7 @@ export type ClientMessage =
   | { type: "leave" }
   | { type: "set_format"; format: Format }
   | { type: "set_spinner"; userId: string; enabled: boolean }
+  | { type: "set_ready"; enabled: boolean }
   | { type: "spin" }
   | { type: "reset" };
 

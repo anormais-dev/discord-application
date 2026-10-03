@@ -69,10 +69,18 @@ export function AdminControls() {
             Participar
           </button>
         )}
+        {perms.isParticipant && room.phase === "lobby" && (
+          <button
+            className={perms.isReady ? "secondary" : "primary"}
+            onClick={() => dispatch(wsSend({ type: "set_ready", enabled: !perms.isReady }))}
+          >
+            {perms.isReady ? "Cancelar pronto" : "Pronto"}
+          </button>
+        )}
         {showSpin && (
           <button
             className="primary"
-            disabled={spinning || (room.phase === "lobby" && !perms.enoughPlayers)}
+            disabled={spinning || (room.phase === "lobby" && (!perms.enoughPlayers || !perms.allReady))}
             onClick={() => dispatch(wsSend({ type: "spin" }))}
           >
             {spinning ? "Girando..." : "Girar"}
@@ -93,6 +101,11 @@ export function AdminControls() {
       {room.phase === "lobby" && missing > 0 && (
         <p className="muted">
           {missing === 1 ? "Falta 1 participante" : `Faltam ${missing} participantes`} para o {formatLabel(room.format)}
+        </p>
+      )}
+      {room.phase === "lobby" && missing <= 0 && perms.notReady > 0 && (
+        <p className="muted">
+          {perms.notReady === 1 ? "Aguardando 1 participante ficar pronto" : `Aguardando ${perms.notReady} participantes ficarem prontos`}
         </p>
       )}
       {room.phase === "drafting" && !perms.canSpin && <p className="muted">Aguardando o admin girar</p>}

@@ -26,6 +26,7 @@ export function ParticipantsPanel() {
                 {p.name}
                 {p.id === me && <span className="muted"> (você)</span>}
               </span>
+              {room.phase === "lobby" && room.ready[p.id] && <span className="badge ready">Pronto</span>}
               {isAdmin && <span className="badge admin">Admin</span>}
               {!isAdmin && isSpinner && <span className="badge">Gira</span>}
               {!p.online && <span className="badge">Offline</span>}

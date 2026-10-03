@@ -106,6 +106,8 @@ func (h *WSHandler) handle(instance string, c *client, msg dto.WSRequest) error 
 		return h.rooms.SetFormat(instance, uid, model.Format{Teams: msg.Format.Teams, Size: msg.Format.Size})
 	case "set_spinner":
 		return h.rooms.SetSpinner(instance, uid, msg.UserID, msg.Enabled)
+	case "set_ready":
+		return h.rooms.SetReady(instance, uid, msg.Enabled)
 	case "spin":
 		return h.rooms.Spin(instance, uid)
 	case "reset":

@@ -12,4 +12,5 @@ var (
 	ErrNotEnoughPlayers = errors.New("participantes insuficientes para o formato")
 	ErrInvalidFormat    = errors.New("formato inválido")
 	ErrNoSpinInProgress = errors.New("nenhum giro em andamento")
+	ErrNotAllReady      = errors.New("todos precisam estar prontos")
 )
