@@ -95,6 +95,10 @@ func (s *RoomService) SetSpinner(instance, userID, target string, on bool) error
 	return s.update(instance, func(r *model.Room) error { return setSpinner(r, userID, target, on) })
 }
 
+func (s *RoomService) SetReady(instance, userID string, on bool) error {
+	return s.update(instance, func(r *model.Room) error { return setReady(r, userID, on) })
+}
+
 func (s *RoomService) Spin(instance, userID string) error {
 	return s.update(instance, func(r *model.Room) error {
 		if _, err := spin(r, s.rng, userID); err != nil {

@@ -12,6 +12,7 @@ type Room struct {
 	Participants []Participant
 	AdminID      string
 	Spinners     map[string]bool
+	Ready        map[string]bool
 	Format       Format
 	Pool         []string
 	Teams        [][]Participant
@@ -24,6 +25,7 @@ func NewRoom() *Room {
 	return &Room{
 		Participants: []Participant{},
 		Spinners:     map[string]bool{},
+		Ready:        map[string]bool{},
 		Format:       DefaultFormat,
 		Pool:         []string{},
 		Teams:        [][]Participant{},

@@ -28,6 +28,7 @@ type RoomResponse struct {
 	Participants []ParticipantResponse   `json:"participants"`
 	AdminID      string                  `json:"adminId"`
 	Spinners     map[string]bool         `json:"spinners"`
+	Ready        map[string]bool         `json:"ready"`
 	Format       Format                  `json:"format"`
 	Pool         []string                `json:"pool"`
 	Teams        [][]ParticipantResponse `json:"teams"`

@@ -223,3 +223,14 @@ func TestLastRemainingWaitsWhenMorePlayersThanSlots(t *testing.T) {
 		t.Fatalf("com 2 na roda ainda precisa girar, fase %s pool %v", r.Phase, r.Pool)
 	}
 }
+
+func TestReadyRules(t *testing.T) {
+	r := newTestRoom(t, 3, model.Formats[0])
+	expectErr(t, setReady(r, "ninguem", true), ErrNotParticipant)
+	disconnect(r, "u2")
+	if r.Ready["u2"] {
+		t.Fatalf("quem sai da sala não deveria continuar pronto")
+	}
+	spinAndCommit(t, r, "u0")
+	expectErr(t, setReady(r, "u0", false), ErrWrongPhase)
+}
