@@ -108,6 +108,8 @@ func (h *WSHandler) handle(instance string, c *client, msg dto.WSRequest) error 
 		return h.rooms.SetSpinner(instance, uid, msg.UserID, msg.Enabled)
 	case "set_ready":
 		return h.rooms.SetReady(instance, uid, msg.Enabled)
+	case "set_auto_spin":
+		return h.rooms.SetAutoSpin(instance, uid, msg.Enabled)
 	case "spin":
 		return h.rooms.Spin(instance, uid)
 	case "reset":

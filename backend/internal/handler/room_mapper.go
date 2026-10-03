@@ -15,6 +15,7 @@ func toRoomResponse(r *model.Room) dto.RoomResponse {
 		AdminID:      r.AdminID,
 		Spinners:     r.Spinners,
 		Ready:        r.Ready,
+		AutoSpin:     r.AutoSpin,
 		Format:       toFormat(r.Format),
 		Pool:         r.Pool,
 		Teams:        teams,

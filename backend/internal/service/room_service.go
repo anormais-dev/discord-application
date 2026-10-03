@@ -13,6 +13,8 @@ import (
 const (
 	// Folga depois da animação antes de aplicar o resultado.
 	defaultCommitDelay = SpinDuration + 500*time.Millisecond
+	// Pausa entre o resultado de um giro e o próximo, com o giro automático ligado.
+	defaultAutoSpinDelay = 2 * time.Second
 	// Tempo que uma room sem ninguém conectado fica em memória.
 	emptyRoomTTL = 5 * time.Minute
 )
@@ -24,8 +26,9 @@ type Client interface {
 }
 
 type RoomService struct {
-	repo        *repository.RoomRepository
-	CommitDelay time.Duration
+	repo          *repository.RoomRepository
+	CommitDelay   time.Duration
+	AutoSpinDelay time.Duration
 
 	mu      sync.Mutex
 	rng     *rand.Rand
@@ -40,10 +43,11 @@ func NewRoomService(repo *repository.RoomRepository) *RoomService {
 
 func NewRoomServiceWithRand(repo *repository.RoomRepository, rng *rand.Rand) *RoomService {
 	return &RoomService{
-		repo:        repo,
-		CommitDelay: defaultCommitDelay,
-		rng:         rng,
-		clients:     map[string]map[Client]struct{}{},
+		repo:          repo,
+		CommitDelay:   defaultCommitDelay,
+		AutoSpinDelay: defaultAutoSpinDelay,
+		rng:           rng,
+		clients:       map[string]map[Client]struct{}{},
 	}
 }
 
@@ -104,7 +108,18 @@ func (s *RoomService) Spin(instance, userID string) error {
 		if _, err := spin(r, s.rng, userID); err != nil {
 			return err
 		}
-		time.AfterFunc(s.CommitDelay, func() { s.commit(instance, r) })
+		s.scheduleCommit(instance, r)
+		return nil
+	})
+}
+
+// SetAutoSpin ligado no meio do sorteio já agenda o próximo giro.
+func (s *RoomService) SetAutoSpin(instance, userID string, on bool) error {
+	return s.update(instance, func(r *model.Room) error {
+		if err := setAutoSpin(r, userID, on); err != nil {
+			return err
+		}
+		s.scheduleAutoSpin(instance, r)
 		return nil
 	})
 }
@@ -138,6 +153,32 @@ func (s *RoomService) commit(instance string, room *model.Room) {
 	if err := commitSpin(room); err != nil {
 		return
 	}
+	s.scheduleAutoSpin(instance, room)
+	s.broadcast(instance, room)
+}
+
+func (s *RoomService) scheduleCommit(instance string, room *model.Room) {
+	time.AfterFunc(s.CommitDelay, func() { s.commit(instance, room) })
+}
+
+func (s *RoomService) scheduleAutoSpin(instance string, room *model.Room) {
+	if !room.AutoSpin || room.Phase != model.PhaseDrafting || room.CurrentSpin != nil {
+		return
+	}
+	time.AfterFunc(s.AutoSpinDelay, func() { s.autoSpin(instance, room) })
+}
+
+func (s *RoomService) autoSpin(instance string, room *model.Room) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if current, err := s.repo.Get(instance); err != nil || current != room {
+		return
+	}
+	if !autoSpin(room, s.rng) {
+		return
+	}
+	s.scheduleCommit(instance, room)
 	s.broadcast(instance, room)
 }
 
