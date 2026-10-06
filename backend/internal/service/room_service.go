@@ -103,16 +103,6 @@ func (s *RoomService) SetReady(instance, userID string, on bool) error {
 	return s.update(instance, func(r *model.Room) error { return setReady(r, userID, on) })
 }
 
-func (s *RoomService) Spin(instance, userID string) error {
-	return s.update(instance, func(r *model.Room) error {
-		if _, err := spin(r, s.rng, userID); err != nil {
-			return err
-		}
-		s.scheduleCommit(instance, r)
-		return nil
-	})
-}
-
 // SetAutoSpin ligado no meio do sorteio já agenda o próximo giro.
 func (s *RoomService) SetAutoSpin(instance, userID string, on bool) error {
 	return s.update(instance, func(r *model.Room) error {
@@ -120,6 +110,16 @@ func (s *RoomService) SetAutoSpin(instance, userID string, on bool) error {
 			return err
 		}
 		s.scheduleAutoSpin(instance, r)
+		return nil
+	})
+}
+
+func (s *RoomService) Spin(instance, userID string) error {
+	return s.update(instance, func(r *model.Room) error {
+		if _, err := spin(r, s.rng, userID); err != nil {
+			return err
+		}
+		s.scheduleCommit(instance, r)
 		return nil
 	})
 }

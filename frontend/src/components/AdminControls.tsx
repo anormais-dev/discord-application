@@ -2,7 +2,7 @@ import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { wsSend } from "../store/roomSlice";
 import { selectFormats, selectPermissions, selectRoom } from "../store/selectors";
 import type { Format } from "../types/room";
-import { formatLabel, teamsLabel } from "../utils/format";
+import { formatLabel } from "../utils/format";
 
 export function AdminControls() {
   const dispatch = useAppDispatch();
@@ -14,15 +14,12 @@ export function AdminControls() {
   const spinning = !!room.spin;
   const missing = perms.slots - room.participants.length;
   const showSpin = perms.canSpin && room.phase !== "finished";
-  const teamCounts = [...new Set(formats.map((f) => f.teams))].sort((a, b) => a - b);
 
   const setFormat = (format: Format) => dispatch(wsSend({ type: "set_format", format }));
-  // Trocar a quantidade de times mantém o tamanho quando ele existe no outro modo.
-  const selectTeams = (teams: number) => {
-    const options = formats.filter((f) => f.teams === teams);
-    const next = options.find((f) => f.size === room.format.size) ?? options[0];
-    if (next) setFormat(next);
-  };
+  const sequential5 = formats.find((f) => f.teams === 1 && f.size === 5);
+  const sequential4 = formats.find((f) => f.teams === 1 && f.size === 4);
+  const format4x4 = formats.find((f) => f.teams === 2 && f.size === 4);
+  const format5x5 = formats.find((f) => f.teams === 2 && f.size === 5);
 
   return (
     <section className="controls">
@@ -30,30 +27,47 @@ export function AdminControls() {
         (perms.isAdmin ? (
           <>
             <div className="formats">
-              <span className="muted">Times</span>
-              {teamCounts.map((teams) => (
-                <button
-                  key={teams}
-                  className={`chip ${teams === room.format.teams ? "active" : ""}`}
-                  onClick={() => selectTeams(teams)}
-                >
-                  {teamsLabel(teams)}
-                </button>
-              ))}
-            </div>
-            <div className="formats">
               <span className="muted">Formato</span>
-              {formats
-                .filter((f) => f.teams === room.format.teams)
-                .map((f) => (
+              {sequential5 && (
+                <>
                   <button
-                    key={formatLabel(f)}
-                    className={`chip ${f.size === room.format.size ? "active" : ""}`}
-                    onClick={() => setFormat(f)}
+                    className={`chip ${room.format.teams === 1 ? "active" : ""}`}
+                    aria-pressed={room.format.teams === 1}
+                    onClick={() => setFormat(sequential5)}
                   >
-                    {formatLabel(f)}
+                    Sequencial
                   </button>
-                ))}
+                  {sequential4 && (
+                    <button
+                      className={`chip bread-toggle ${room.format.teams === 1 && room.format.size === 4 ? "active" : ""}`}
+                      aria-label="Sequencial com time de 4"
+                      aria-pressed={room.format.teams === 1 && room.format.size === 4}
+                      title="Sequencial com time de 4"
+                      onClick={() => setFormat(room.format.teams === 1 && room.format.size === 4 ? sequential5 : sequential4)}
+                    >
+                      <img src="/images/bread.png" alt="" />
+                    </button>
+                  )}
+                </>
+              )}
+              {format4x4 && (
+                <button
+                  className={`chip ${room.format.teams === 2 && room.format.size === 4 ? "active" : ""}`}
+                  aria-pressed={room.format.teams === 2 && room.format.size === 4}
+                  onClick={() => setFormat(format4x4)}
+                >
+                  4x4
+                </button>
+              )}
+              {format5x5 && (
+                <button
+                  className={`chip ${room.format.teams === 2 && room.format.size === 5 ? "active" : ""}`}
+                  aria-pressed={room.format.teams === 2 && room.format.size === 5}
+                  onClick={() => setFormat(format5x5)}
+                >
+                  5x5
+                </button>
+              )}
             </div>
           </>
         ) : (
@@ -69,6 +83,7 @@ export function AdminControls() {
           {perms.canSpin ? (
             <button
               className={`chip ${room.autoSpin ? "active" : ""}`}
+              aria-pressed={room.autoSpin}
               onClick={() => dispatch(wsSend({ type: "set_auto_spin", enabled: !room.autoSpin }))}
             >
               {room.autoSpin ? "Ligado" : "Desligado"}

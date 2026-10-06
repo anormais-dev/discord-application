@@ -30,6 +30,7 @@ func NewRoom() *Room {
 		Participants: []Participant{},
 		Spinners:     map[string]bool{},
 		Ready:        map[string]bool{},
+		AutoSpin:     true,
 		Format:       DefaultFormat,
 		Pool:         []string{},
 		Teams:        [][]Participant{},

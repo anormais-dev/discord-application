@@ -384,6 +384,38 @@ h3 {
   background: var(--accent);
 }
 
+.bread-toggle {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 15px;
+  clip-path: polygon(
+    50% 0%,
+    62% 24%,
+    85% 15%,
+    76% 38%,
+    100% 50%,
+    76% 62%,
+    85% 85%,
+    62% 76%,
+    50% 100%,
+    38% 76%,
+    15% 85%,
+    24% 62%,
+    0% 50%,
+    24% 38%,
+    15% 15%,
+    38% 24%
+  );
+}
+
+.bread-toggle img {
+  display: block;
+  width: 20px;
+  height: 20px;
+}
+
 .primary {
   padding: 10px 24px;
   background: var(--accent);
