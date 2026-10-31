@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { SpinState } from "../types/room";
-import { POINTER_ANGLE, TAU, drawWheel, easeOutQuart } from "../utils/wheel";
+import { POINTER_ANGLE, TAU, WHEEL_FONT, drawWheel, easeOutQuart } from "../utils/wheel";
 
 const SPIRAL_START = 0.15;
 const SPIRAL_TURNS = 4;
@@ -42,6 +42,8 @@ export function Wheel({ spin, ids, label, empty, celebrate, resultPrefix, settle
   const [landed, setLanded] = useState<string | null>(null);
   // Largura do canvas; muda quando o Discord redimensiona a janela e força redesenhar.
   const [size, setSize] = useState(0);
+  // O canvas não espera a fonte carregar; redesenha quando ela chega.
+  const [fontReady, setFontReady] = useState(false);
 
   const celebrationActive = !!landed && celebrate;
   const resultId = celebrationActive ? landed : spin ? null : settledId;
@@ -84,6 +86,17 @@ export function Wheel({ spin, ids, label, empty, celebrate, resultPrefix, settle
   }, []);
 
   useEffect(() => {
+    let alive = true;
+    document.fonts
+      ?.load(`700 16px ${WHEEL_FONT}`)
+      .then(() => alive && setFontReady(true))
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     let frame = 0;
@@ -122,7 +135,7 @@ export function Wheel({ spin, ids, label, empty, celebrate, resultPrefix, settle
     };
     render();
     return () => cancelAnimationFrame(frame);
-  }, [names.join("\u0000"), spin, emptyText, size]);
+  }, [names.join("\u0000"), spin, emptyText, size, fontReady]);
 
   return (
     <div className="wheel">

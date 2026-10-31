@@ -328,7 +328,7 @@ h3 {
 .wheel-stage {
   position: relative;
   /* Limita pela altura também, para caber quando o Discord deixa a janela baixa. */
-  width: min(380px, 100%, 60vh);
+  width: min(430px, 100%, 60vh);
   aspect-ratio: 1;
 }
 
@@ -557,10 +557,12 @@ h3 {
 }
 
 .wheel-result {
-  margin: 8px 0 0;
+  margin: 10px 0 0;
+  font-family: var(--font-pixel);
   font-size: 20px;
-  font-weight: 700;
+  color: var(--yellow);
   min-height: 1.4em;
+  text-align: center;
 }
 
 .controls {
