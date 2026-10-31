@@ -25,11 +25,10 @@ export const startSession = createAsyncThunk("session/start", async (_, { dispat
     const { access_token } = await dispatch(authApi.endpoints.exchangeCode.initiate({ code })).unwrap();
     step = "authenticate";
     await discordSdk.commands.authenticate({ access_token });
-    // No PiP o Discord trata o clique e devolve a Activity para o foco; a página só mostra o aviso.
-    const { PIP, GRID } = Common.LayoutModeTypeObject;
+    // Só o PiP vira tela compacta; no mosaico da call a Activity tem espaço para a roleta.
     discordSdk
       .subscribe("ACTIVITY_LAYOUT_MODE_UPDATE", ({ layout_mode }) =>
-        dispatch(compactChanged(layout_mode === PIP || layout_mode === GRID)),
+        dispatch(compactChanged(layout_mode === Common.LayoutModeTypeObject.PIP)),
       )
       .catch((err) => console.warn("layout mode indisponível", err));
     dispatch(wsConnect({ accessToken: access_token, instanceId: discordSdk.instanceId, guildId: discordSdk.guildId }));

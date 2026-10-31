@@ -10,7 +10,7 @@ interface RoomSliceState {
   formats: Format[];
   error: string | null;
   fatal: string | null;
-  // Activity minimizada (PiP) ou em mosaico na call.
+  // Activity minimizada no PiP.
   compact: boolean;
 }
 
