@@ -79,6 +79,7 @@ h3 {
   font-weight: 700;
   font-size: 14px;
   color: var(--dark);
+  white-space: nowrap;
 }
 
 .btn.px {
@@ -113,8 +114,9 @@ h3 {
 }
 
 .btn.btn-big {
-  padding: 18px 28px;
-  font-size: 28px;
+  padding: 18px 24px;
+  /* Encolhe em janela menor para o texto caber na largura do botão. */
+  font-size: clamp(20px, 2.4vw, 28px);
   box-shadow: 6px 6px 0 var(--red-shadow);
 }
 
@@ -696,7 +698,7 @@ h3 {
   flex-direction: column;
   align-items: flex-start;
   gap: 18px;
-  min-width: 0;
+  min-width: 260px;
 }
 
 .ctrl .btn-big {
@@ -889,7 +891,7 @@ h3 {
   padding-top: 4px;
 }
 
-@media (max-width: 1080px) {
+@media (max-width: 1180px) {
   .lobby .stage {
     flex-direction: column;
     align-items: stretch;
