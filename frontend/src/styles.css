@@ -84,6 +84,7 @@ h3 {
 .btn.px {
   font-family: var(--font-pixel);
   font-size: 16px;
+  text-transform: uppercase;
 }
 
 .btn:active:not(:disabled) {
@@ -111,7 +112,7 @@ h3 {
   border: 2px solid var(--line);
 }
 
-.btn-big {
+.btn.btn-big {
   padding: 18px 28px;
   font-size: 28px;
   box-shadow: 6px 6px 0 var(--red-shadow);
@@ -130,6 +131,7 @@ h3 {
   line-height: 1;
   padding: 4px 6px;
   white-space: nowrap;
+  text-transform: uppercase;
 }
 
 .tag-red {
@@ -243,15 +245,15 @@ h3 {
   margin: 0 auto;
 }
 
-.stage {
+.layout .stage {
   grid-area: stage;
 }
 
-.side {
+.layout .side {
   grid-area: side;
 }
 
-.bottom {
+.layout .bottom {
   grid-area: bottom;
 }
 
@@ -612,52 +614,6 @@ h3 {
   font-size: 12px;
 }
 
-.people {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.people li {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.people li.offline {
-  opacity: 0.5;
-}
-
-.people img,
-.team img {
-  border-radius: 50%;
-}
-
-.name {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.badge {
-  padding: 1px 6px;
-  border-radius: 4px;
-  background: #4e5058;
-  font-size: 11px;
-  font-weight: 600;
-}
-
-.badge.admin {
-  background: var(--accent);
-}
-
-.badge.ready {
-  background: var(--success);
-}
-
 .teams {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(160px, 100%), 1fr));
@@ -941,4 +897,252 @@ h3 {
   padding: 10px 12px;
   font-size: 13px;
   box-shadow: 3px 3px 0 var(--red-shadow);
+}
+
+/* Lobby: roda e controles à esquerda, esquadrão à direita. */
+.lobby {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 380px;
+  gap: 28px;
+  padding: 20px 28px;
+  max-width: 1280px;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+.lobby .stage {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  min-width: 0;
+}
+
+.lobby .wheel {
+  flex: 0 1 430px;
+}
+
+.ctrl {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 18px;
+  min-width: 0;
+}
+
+.ctrl .btn-big {
+  align-self: stretch;
+}
+
+.lbl {
+  font-size: 12px;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.fmt {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.fmt-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.fmt-row .lbl {
+  min-width: 72px;
+}
+
+.fmt-total,
+.fmt-ro {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.fmt-total .px,
+.fmt-v {
+  font-size: 16px;
+  color: var(--yellow);
+}
+
+.hint {
+  margin: 0;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.hint b {
+  color: var(--yellow);
+}
+
+.hint.small {
+  margin-top: -10px;
+  font-size: 12px;
+}
+
+.join-box {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 22px;
+  background: var(--panel);
+  border: 2px solid var(--red);
+  box-shadow: 6px 6px 0 #000;
+}
+
+.join-k {
+  font-size: 16px;
+  color: var(--red);
+  text-transform: uppercase;
+}
+
+.join-d {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.join-d b {
+  color: var(--yellow);
+}
+
+.squad {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+}
+
+.squad .panel-h .px {
+  text-transform: uppercase;
+}
+
+.count {
+  font-weight: 700;
+  font-size: 22px;
+}
+
+.count small {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.slots {
+  display: flex;
+  gap: 4px;
+}
+
+.slots span {
+  flex: 1;
+  height: 8px;
+  background: var(--panel-2);
+}
+
+.slots span.on {
+  background: var(--cyan);
+}
+
+.squad-empty {
+  margin: 0;
+}
+
+.people {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow-y: auto;
+}
+
+.people li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 8px;
+  background: var(--panel-2);
+  border-left: 3px solid var(--line);
+}
+
+.people li.off {
+  opacity: 0.6;
+  border-left-color: var(--yellow);
+}
+
+.nm {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.you {
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.tags {
+  display: flex;
+  gap: 6px;
+}
+
+.star {
+  width: 24px;
+  padding: 0;
+  background: none;
+  color: var(--line);
+  font-size: 18px;
+  line-height: 1;
+}
+
+.star.on {
+  color: var(--yellow);
+}
+
+.squad-foot {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin-top: auto;
+  padding-top: 4px;
+}
+
+@media (max-width: 1080px) {
+  .lobby .stage {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .lobby .wheel {
+    flex: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .lobby {
+    grid-template-columns: 1fr;
+    padding: 12px;
+    gap: 16px;
+  }
+}
+
+/* A fonte pixel deixa números pequenos ambíguos ("2" parece "S"); números usam a fonte do texto. */
+.step-n,
+.fmt-total .px,
+.fmt-v {
+  font-family: var(--font-body);
+  font-weight: 700;
 }
