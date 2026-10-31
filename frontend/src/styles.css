@@ -735,10 +735,11 @@ h3 {
 .steps {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 30px;
 }
 
 .step {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -751,11 +752,14 @@ h3 {
   text-transform: uppercase;
 }
 
+/* Traço entre as etapas, fora da caixa da etapa atual. */
 .step + .step::before {
   content: "";
-  width: 20px;
+  position: absolute;
+  top: 50%;
+  right: calc(100% + 7px);
+  width: 16px;
   height: 2px;
-  margin-right: 8px;
   background: var(--line);
 }
 
@@ -799,7 +803,12 @@ h3 {
     padding: 4px 6px;
   }
 
+  .steps {
+    gap: 14px;
+  }
+
   .step + .step::before {
+    right: calc(100% + 3px);
     width: 8px;
   }
 
@@ -1141,8 +1150,166 @@ h3 {
 
 /* A fonte pixel deixa números pequenos ambíguos ("2" parece "S"); números usam a fonte do texto. */
 .step-n,
+.team-list .pick,
 .fmt-total .px,
 .fmt-v {
   font-family: var(--font-body);
   font-weight: 700;
+}
+
+/* Sorteio: colunas dos times dos lados da roda. */
+.draft {
+  display: grid;
+  grid-template-columns: minmax(220px, 300px) minmax(0, 1fr) minmax(220px, 300px);
+  align-items: center;
+  gap: 24px;
+  padding: 20px 28px;
+  max-width: 1280px;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+.team-col {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border-top: 6px solid var(--tc);
+}
+
+.team-h {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--tc);
+}
+
+.team-h .px {
+  font-size: 18px;
+  text-transform: uppercase;
+}
+
+.team-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.team-list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 46px;
+  padding: 5px 8px;
+  box-sizing: border-box;
+  background: var(--panel-2);
+}
+
+.team-list .pick {
+  font-size: 13px;
+  color: var(--tc);
+}
+
+.team-list li.empty {
+  background: transparent;
+  border: 2px dashed var(--line);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.team-list li.next {
+  border-color: var(--tc);
+  color: var(--tc);
+}
+
+.ph {
+  width: 32px;
+  height: 32px;
+  background: var(--panel-2);
+}
+
+.pool .team-list li {
+  opacity: 0.85;
+}
+
+.draft-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.round {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.round .px {
+  font-size: 18px;
+  color: var(--yellow);
+  text-transform: uppercase;
+}
+
+.round-bar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px;
+}
+
+.round-bar span {
+  width: 22px;
+  height: 10px;
+  background: var(--panel-2);
+}
+
+.round-bar span.on {
+  background: var(--cyan);
+}
+
+.round-bar span.now {
+  background: var(--yellow);
+}
+
+.draft .wheel {
+  width: 100%;
+}
+
+.draft .wheel-stage {
+  width: min(400px, 100%, 52vh);
+}
+
+.draft-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+
+@media (max-width: 900px) {
+  .draft {
+    grid-template-columns: 1fr 1fr;
+    padding: 12px;
+    gap: 16px;
+  }
+
+  .draft-center {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+}
+
+@media (max-width: 520px) {
+  .draft {
+    grid-template-columns: 1fr;
+  }
 }
