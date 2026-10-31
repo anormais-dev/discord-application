@@ -25,7 +25,14 @@ export const startSession = createAsyncThunk("session/start", async (_, { dispat
     const { access_token } = await dispatch(authApi.endpoints.exchangeCode.initiate({ code })).unwrap();
     step = "authenticate";
     await discordSdk.commands.authenticate({ access_token });
-    dispatch(wsConnect({ accessToken: access_token, instanceId: discordSdk.instanceId, guildId: discordSdk.guildId }));
+    dispatch(
+      wsConnect({
+        accessToken: access_token,
+        instanceId: discordSdk.instanceId,
+        guildId: discordSdk.guildId,
+        channelId: discordSdk.channelId,
+      }),
+    );
   } catch (err) {
     console.error(`falha na etapa ${step}`, err);
     dispatch(sessionFailed(`Etapa ${step}: ${describe(err)}`));

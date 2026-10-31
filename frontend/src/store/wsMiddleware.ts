@@ -9,9 +9,13 @@ const RECONNECT_DELAY_MS = 2000;
 export const wsMiddleware: Middleware = (store) => {
   let socket: WebSocket | null = null;
 
-  const open = (accessToken: string, instanceId: string, guildId?: string | null) => {
+  const open = (accessToken: string, instanceId: string, guildId?: string | null, channelId?: string | null) => {
     const protocol = location.protocol === "https:" ? "wss" : "ws";
-    const url = `${protocol}://${location.host}${apiBase}/ws?instance=${encodeURIComponent(instanceId)}`;
+    // guild e channel separam a sala por call; sem eles o backend usa a instance.
+    const query = new URLSearchParams({ instance: instanceId });
+    if (guildId) query.set("guild", guildId);
+    if (channelId) query.set("channel", channelId);
+    const url = `${protocol}://${location.host}${apiBase}/ws?${query}`;
     store.dispatch(statusChanged("connecting"));
 
     const ws = new WebSocket(url);
@@ -29,13 +33,13 @@ export const wsMiddleware: Middleware = (store) => {
       if (socket !== ws) return;
       socket = null;
       store.dispatch(statusChanged("disconnected"));
-      setTimeout(() => open(accessToken, instanceId, guildId), RECONNECT_DELAY_MS);
+      setTimeout(() => open(accessToken, instanceId, guildId, channelId), RECONNECT_DELAY_MS);
     };
   };
 
   return (next) => (action) => {
     if (wsConnect.match(action)) {
-      open(action.payload.accessToken, action.payload.instanceId, action.payload.guildId);
+      open(action.payload.accessToken, action.payload.instanceId, action.payload.guildId, action.payload.channelId);
     } else if (wsSend.match(action)) {
       if (socket?.readyState === WebSocket.OPEN) {
         socket.send(JSON.stringify(action.payload));
