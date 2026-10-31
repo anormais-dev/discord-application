@@ -83,6 +83,33 @@ h3 {
   }
 }
 
+@media (max-width: 480px) {
+  .layout {
+    gap: 8px;
+    padding: 8px;
+  }
+
+  .panel {
+    padding: 12px;
+  }
+
+  .primary,
+  .secondary {
+    padding: 8px 16px;
+  }
+}
+
+.compact {
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  padding: 8px;
+  box-sizing: border-box;
+  text-align: center;
+  color: var(--muted);
+  font-weight: 600;
+}
+
 .banner {
   position: fixed;
   top: 0;
@@ -118,7 +145,8 @@ h3 {
 
 .wheel-stage {
   position: relative;
-  width: min(380px, 100%);
+  /* Limita pela altura também, para caber quando o Discord deixa a janela baixa. */
+  width: min(380px, 100%, 60vh);
   aspect-ratio: 1;
 }
 
@@ -134,8 +162,9 @@ h3 {
   --spiral-rotation: 0rad;
   position: absolute;
   inset: 50% auto auto 50%;
-  width: 140px;
-  height: 126px;
+  /* 140x126 na roda de 380px, proporcional para escalar junto. */
+  width: 37%;
+  aspect-ratio: 140 / 126;
   transform: translate(-50%, -50%);
   z-index: 2;
   pointer-events: none;
@@ -237,9 +266,9 @@ h3 {
 
 .celebration-cone-group {
   position: absolute;
-  top: 60px;
+  top: 48%;
   left: 50%;
-  width: 200px;
+  width: 143%;
   transform: translateX(-50%);
   opacity: 0;
 }
@@ -453,7 +482,7 @@ h3 {
 
 .teams {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(160px, 100%), 1fr));
   gap: 12px;
 }
 

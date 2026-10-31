@@ -1,7 +1,7 @@
-import { DiscordSDK } from "@discord/embedded-app-sdk";
+import { Common, DiscordSDK } from "@discord/embedded-app-sdk";
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { authApi } from "./api";
-import { sessionFailed, wsConnect } from "../store/roomSlice";
+import { compactChanged, sessionFailed, wsConnect } from "../store/roomSlice";
 import { describe } from "../utils/errors";
 
 // Fluxo: config -> ready -> authorize -> /.proxy/api/token -> authenticate -> WebSocket.
@@ -25,6 +25,12 @@ export const startSession = createAsyncThunk("session/start", async (_, { dispat
     const { access_token } = await dispatch(authApi.endpoints.exchangeCode.initiate({ code })).unwrap();
     step = "authenticate";
     await discordSdk.commands.authenticate({ access_token });
+    // Só o PiP vira tela compacta; no mosaico da call a Activity tem espaço para a roleta.
+    discordSdk
+      .subscribe("ACTIVITY_LAYOUT_MODE_UPDATE", ({ layout_mode }) =>
+        dispatch(compactChanged(layout_mode === Common.LayoutModeTypeObject.PIP)),
+      )
+      .catch((err) => console.warn("layout mode indisponível", err));
     dispatch(
       wsConnect({
         accessToken: access_token,

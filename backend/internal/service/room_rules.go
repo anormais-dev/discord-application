@@ -243,18 +243,27 @@ func connect(r *model.Room, userID string) {
 	}
 }
 
-// disconnect tira da roda quem sai antes do primeiro giro; depois disso a pessoa
-// fica offline, mas continua no time.
+// disconnect só marca offline: uma queda rápida (alt-tab, rede) não pode tirar a
+// pessoa da roda. A saída de verdade vem em dropOffline, depois da tolerância.
 func disconnect(r *model.Room, userID string) {
 	i := indexOf(r, userID)
 	if i < 0 {
+		return
+	}
+	r.Participants[i].Online = false
+}
+
+// dropOffline tira da roda quem não voltou antes do primeiro giro; depois disso a
+// pessoa continua no time, mas perde o admin.
+func dropOffline(r *model.Room, userID string) {
+	i := indexOf(r, userID)
+	if i < 0 || r.Participants[i].Online {
 		return
 	}
 	if r.Phase == model.PhaseLobby {
 		remove(r, userID)
 		return
 	}
-	r.Participants[i].Online = false
 	if r.AdminID == userID {
 		transferAdmin(r)
 	}

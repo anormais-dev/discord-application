@@ -67,13 +67,18 @@ func TestAdminTransfersToOldestOnline(t *testing.T) {
 		t.Fatalf("admin = %q, esperado u1", r.AdminID)
 	}
 
-	// Em drafting, desconectar mantém no time mas passa o admin.
+	// Em drafting, cair mantém o admin até a tolerância acabar; depois passa o admin, mas fica no time.
 	spinAndCommit(t, r, "u1")
 	disconnect(r, "u1")
+	if r.AdminID != "u1" {
+		t.Fatalf("admin = %q, esperado u1 durante a tolerância", r.AdminID)
+	}
+	dropOffline(r, "u1")
 	if r.AdminID != "u2" {
 		t.Fatalf("admin = %q, esperado u2", r.AdminID)
 	}
 	disconnect(r, "u2")
+	dropOffline(r, "u2")
 	if r.AdminID != "" || slices.ContainsFunc(r.Participants, func(p model.Participant) bool { return p.Online }) {
 		t.Fatalf("sem ninguém online não deveria haver admin")
 	}
@@ -83,9 +88,19 @@ func TestAdminTransfersToOldestOnline(t *testing.T) {
 	}
 }
 
-func TestLobbyDisconnectRemovesParticipant(t *testing.T) {
+func TestLobbyDisconnectRemovesParticipantAfterGrace(t *testing.T) {
 	r := newTestRoom(t, 2, model.Formats[0])
 	disconnect(r, "u1")
+	if len(r.Participants) != 2 || !r.Ready["u1"] {
+		t.Fatalf("durante a tolerância o participante deveria continuar na roda e pronto")
+	}
+	connect(r, "u1")
+	dropOffline(r, "u1")
+	if len(r.Participants) != 2 {
+		t.Fatalf("quem voltou online não deveria sair da roda")
+	}
+	disconnect(r, "u1")
+	dropOffline(r, "u1")
 	if len(r.Participants) != 1 || len(r.Pool) != 1 {
 		t.Fatalf("participante deveria ter saído da roda")
 	}
@@ -252,6 +267,7 @@ func TestReadyRules(t *testing.T) {
 	r := newTestRoom(t, 3, model.Formats[0])
 	expectErr(t, setReady(r, "ninguem", true), ErrNotParticipant)
 	disconnect(r, "u2")
+	dropOffline(r, "u2")
 	if r.Ready["u2"] {
 		t.Fatalf("quem sai da sala não deveria continuar pronto")
 	}

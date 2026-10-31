@@ -20,6 +20,10 @@ import (
 const (
 	authTimeout  = 10 * time.Second
 	writeTimeout = 5 * time.Second
+	// Proxies no caminho (Discord, Cloudflare, Traefik) derrubam WebSocket ocioso;
+	// o ping mantém o tráfego e detecta conexão que morreu sem fechar.
+	pingInterval = 20 * time.Second
+	pingTimeout  = 10 * time.Second
 )
 
 type WSHandler struct {
@@ -68,6 +72,7 @@ func (h *WSHandler) ServeWS(w http.ResponseWriter, r *http.Request) {
 	defer h.rooms.Detach(instance, c)
 
 	go writeLoop(ctx, cancel, conn, c)
+	go keepAlive(ctx, cancel, conn)
 
 	for {
 		var msg dto.WSRequest
@@ -170,6 +175,26 @@ func writeLoop(ctx context.Context, cancel context.CancelFunc, conn *websocket.C
 			err := conn.Write(wctx, websocket.MessageText, b)
 			wcancel()
 			if err != nil {
+				return
+			}
+		}
+	}
+}
+
+// keepAlive depende do loop de leitura rodando, que é quem recebe o pong.
+func keepAlive(ctx context.Context, cancel context.CancelFunc, conn *websocket.Conn) {
+	ticker := time.NewTicker(pingInterval)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			pctx, pcancel := context.WithTimeout(ctx, pingTimeout)
+			err := conn.Ping(pctx)
+			pcancel()
+			if err != nil {
+				cancel()
 				return
 			}
 		}

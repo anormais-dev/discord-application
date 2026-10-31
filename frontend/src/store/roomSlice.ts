@@ -10,6 +10,8 @@ interface RoomSliceState {
   formats: Format[];
   error: string | null;
   fatal: string | null;
+  // Activity minimizada no PiP.
+  compact: boolean;
 }
 
 const initialState: RoomSliceState = {
@@ -19,6 +21,7 @@ const initialState: RoomSliceState = {
   formats: [],
   error: null,
   fatal: null,
+  compact: false,
 };
 
 // Tratadas pelo wsMiddleware.
@@ -48,8 +51,11 @@ const roomSlice = createSlice({
     errorCleared(state) {
       state.error = null;
     },
+    compactChanged(state, action: PayloadAction<boolean>) {
+      state.compact = action.payload;
+    },
   },
 });
 
-export const { statusChanged, stateReceived, sessionFailed, errorReceived, errorCleared } = roomSlice.actions;
+export const { statusChanged, stateReceived, sessionFailed, errorReceived, errorCleared, compactChanged } = roomSlice.actions;
 export const roomReducer = roomSlice.reducer;

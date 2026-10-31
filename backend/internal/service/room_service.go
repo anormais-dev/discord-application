@@ -15,6 +15,8 @@ const (
 	defaultCommitDelay = SpinDuration + 500*time.Millisecond
 	// Pausa entre o resultado de um giro e o próximo, com o giro automático ligado.
 	defaultAutoSpinDelay = 2 * time.Second
+	// Tempo que alguém pode ficar desconectado antes de sair da roda ou perder o admin.
+	defaultDisconnectGrace = 30 * time.Second
 	// Tempo que uma room sem ninguém conectado fica em memória.
 	emptyRoomTTL = 5 * time.Minute
 )
@@ -29,10 +31,25 @@ type RoomService struct {
 	repo          *repository.RoomRepository
 	CommitDelay   time.Duration
 	AutoSpinDelay time.Duration
+	// DisconnectGrace é a tolerância para reconectar sem perder o lugar.
+	DisconnectGrace time.Duration
 
 	mu      sync.Mutex
 	rng     *rand.Rand
 	clients map[string]map[Client]struct{}
+	// Timers de tolerância pendentes, por instance e usuário.
+	grace map[graceKey]*graceTimer
+}
+
+type graceKey struct {
+	instance string
+	userID   string
+}
+
+// graceTimer existe para ter um ponteiro estável: o callback compara a identidade
+// com o que está no mapa sem ler o *time.Timer fora do lock.
+type graceTimer struct {
+	timer *time.Timer
 }
 
 func NewRoomService(repo *repository.RoomRepository) *RoomService {
@@ -43,11 +60,13 @@ func NewRoomService(repo *repository.RoomRepository) *RoomService {
 
 func NewRoomServiceWithRand(repo *repository.RoomRepository, rng *rand.Rand) *RoomService {
 	return &RoomService{
-		repo:          repo,
-		CommitDelay:   defaultCommitDelay,
-		AutoSpinDelay: defaultAutoSpinDelay,
-		rng:           rng,
-		clients:       map[string]map[Client]struct{}{},
+		repo:            repo,
+		CommitDelay:     defaultCommitDelay,
+		AutoSpinDelay:   defaultAutoSpinDelay,
+		DisconnectGrace: defaultDisconnectGrace,
+		rng:             rng,
+		clients:         map[string]map[Client]struct{}{},
+		grace:           map[graceKey]*graceTimer{},
 	}
 }
 
@@ -60,6 +79,7 @@ func (s *RoomService) Attach(instance string, c Client) {
 		s.clients[instance] = map[Client]struct{}{}
 	}
 	s.clients[instance][c] = struct{}{}
+	s.stopGrace(graceKey{instance, c.UserID()})
 	connect(room, c.UserID())
 	s.broadcast(instance, room)
 }
@@ -73,8 +93,13 @@ func (s *RoomService) Detach(instance string, c Client) {
 		return
 	}
 	delete(s.clients[instance], c)
-	if !s.hasUser(instance, c.UserID()) {
-		disconnect(room, c.UserID())
+	if uid := c.UserID(); !s.hasUser(instance, uid) {
+		disconnect(room, uid)
+		key := graceKey{instance, uid}
+		s.stopGrace(key)
+		g := &graceTimer{}
+		g.timer = time.AfterFunc(s.DisconnectGrace, func() { s.expire(key, room, g) })
+		s.grace[key] = g
 	}
 	s.broadcast(instance, room)
 
@@ -210,6 +235,30 @@ func (s *RoomService) autoSpin(instance string, room *model.Room) {
 	}
 	s.scheduleCommit(instance, room)
 	s.broadcast(instance, room)
+}
+
+// expire aplica a saída de quem não reconectou dentro da tolerância. Um timer que já
+// tinha disparado quando foi parado não bate com o atual e é ignorado.
+func (s *RoomService) expire(key graceKey, room *model.Room, g *graceTimer) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if s.grace[key] != g {
+		return
+	}
+	delete(s.grace, key)
+	if current, err := s.repo.Get(key.instance); err != nil || current != room || s.hasUser(key.instance, key.userID) {
+		return
+	}
+	dropOffline(room, key.userID)
+	s.broadcast(key.instance, room)
+}
+
+func (s *RoomService) stopGrace(key graceKey) {
+	if g, ok := s.grace[key]; ok {
+		g.timer.Stop()
+		delete(s.grace, key)
+	}
 }
 
 func (s *RoomService) cleanup(instance string, room *model.Room) {
