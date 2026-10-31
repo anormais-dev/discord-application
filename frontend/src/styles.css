@@ -1442,3 +1442,90 @@ h3 {
   line-height: 1.4;
   color: var(--muted);
 }
+
+/* Fora do Discord: acesso privado. */
+.private {
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.private-card {
+  width: min(560px, 100%);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 32px 36px;
+  text-align: center;
+  border-color: var(--red);
+}
+
+.private-tag {
+  font-size: 14px;
+  padding: 6px 10px;
+  box-shadow: 3px 3px 0 var(--red-shadow);
+}
+
+.private-t {
+  margin: 0;
+  font-size: 34px;
+  color: var(--yellow);
+  text-shadow: 4px 4px 0 var(--red-shadow);
+  text-transform: uppercase;
+}
+
+.private-d {
+  margin: 0;
+  max-width: 440px;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.private-d b {
+  color: var(--red);
+}
+
+.private-steps {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.private-steps li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: var(--panel-2);
+  font-weight: 700;
+  font-size: 14px;
+  text-align: left;
+}
+
+.private-n {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  background: var(--cyan);
+  color: var(--dark);
+}
+
+@media (max-width: 480px) {
+  .private-card {
+    padding: 24px 18px;
+  }
+
+  .private-t {
+    font-size: 26px;
+  }
+}
