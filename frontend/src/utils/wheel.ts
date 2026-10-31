@@ -34,7 +34,9 @@ export function drawWheel(canvas: HTMLCanvasElement, names: string[], rotation: 
   }
 
   const slice = TAU / names.length;
-  const fontSize = Math.max(11, Math.min(18, 220 / names.length));
+  // A roda tem 380px no tamanho cheio; menor que isso, o texto encolhe junto.
+  const scale = Math.min(1, size / 380);
+  const fontSize = Math.max(9, Math.min(18, 220 / names.length) * scale);
   names.forEach((name, i) => {
     const start = rotation + i * slice;
     ctx.fillStyle = COLORS[i % COLORS.length];
