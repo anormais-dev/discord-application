@@ -14,7 +14,7 @@ export function CompactView() {
       <div>
         {drafting && (
           <div className="px compact-t">
-            Pick {Math.min(room.picks + 1, perms.slots)}/{perms.slots}
+            Escolha {Math.min(room.picks + 1, perms.slots)}/{perms.slots}
           </div>
         )}
         <div className="compact-s">{room?.spin ? "Roleta girando" : drafting ? "Sorteio em andamento" : "Roleta dos Anormais"}</div>

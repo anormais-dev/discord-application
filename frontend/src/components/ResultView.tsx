@@ -53,8 +53,8 @@ export function ResultView() {
             <div className="px hero-k">{teams === 1 ? "Você foi" : "Você está no"}</div>
             <div className="px hero-t">{teams === 1 ? "Selecionado" : teamName(myTeam)}</div>
             <p className="hero-d">
-              Você saiu no <b>pick #{pickNumber(myTeam, mySlot, teams)}</b>.
-              {teams === 2 && ` Seu time joga contra o ${teamName(1 - myTeam)}, chama a galera na call.`}
+              Você saiu em <b>{pickNumber(myTeam, mySlot, teams)}º</b> no sorteio.
+              {teams === 2 && ` Seu time joga contra o ${teamName(1 - myTeam)}.`}
             </p>
           </div>
         </section>
@@ -84,7 +84,7 @@ export function ResultView() {
 
       <div className="result-teams">
         <TeamCard title={teams === 1 ? "Selecionados" : teamName(0)} color={color(0)} members={room.teams[0] ?? []} me={me} team={0} teams={teams} />
-        {teams === 2 && <div className="vs px">VS</div>}
+        {teams === 2 && <div className="vs px">X</div>}
         {teams === 2 && <TeamCard title={teamName(1)} color={color(1)} members={room.teams[1] ?? []} me={me} team={1} teams={teams} />}
         {teams === 1 && leftOut.length > 0 && (
           <TeamCard title="Ficaram de fora" color="var(--muted)" members={leftOut} me={me} />
@@ -146,7 +146,7 @@ function TeamCard({
             <img className="avatar" src={p.avatar} alt="" width={36} height={36} />
             <span className="nm">{p.name}</span>
             {p.id === me && <span className="tag tag-yellow">Você</span>}
-            {team !== undefined && teams !== undefined && <span className="pick">#{pickNumber(team, slot, teams)}</span>}
+            {team !== undefined && teams !== undefined && <span className="pick">{pickNumber(team, slot, teams)}º</span>}
           </li>
         ))}
       </ol>

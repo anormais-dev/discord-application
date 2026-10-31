@@ -45,7 +45,7 @@ export function DraftView() {
       <div className="draft-center">
         <div className="round">
           <span className="px">
-            Pick {Math.min(room.picks + 1, total)}/{total}
+            Escolha {Math.min(room.picks + 1, total)}/{total}
           </span>
           <div className="round-bar" aria-hidden="true">
             {Array.from({ length: total }, (_, i) => (
@@ -113,7 +113,7 @@ function TeamColumn({
               <li key={slot}>
                 <img className="avatar" src={p.avatar} alt="" width={32} height={32} />
                 <span className="nm">{p.name}</span>
-                <span className="pick px">#{pickNumber(team, slot, teams)}</span>
+                <span className="pick px">{pickNumber(team, slot, teams)}º</span>
               </li>
             );
           }
@@ -121,7 +121,7 @@ function TeamColumn({
           return (
             <li key={slot} className={`empty ${isNext ? "next" : ""}`}>
               <span className="ph" />
-              <span>{isNext ? "Próximo pick" : "Vaga"}</span>
+              <span>{isNext ? "Próxima vaga" : "Vaga"}</span>
             </li>
           );
         })}

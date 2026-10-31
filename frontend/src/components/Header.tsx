@@ -7,7 +7,7 @@ import { SettingsPanel } from "./SettingsPanel";
 import { SoundToggle } from "./SoundToggle";
 
 const STEPS: { phase: Phase; label: string }[] = [
-  { phase: "lobby", label: "Lobby" },
+  { phase: "lobby", label: "Sala" },
   { phase: "drafting", label: "Sorteio" },
   { phase: "finished", label: "Times" },
 ];

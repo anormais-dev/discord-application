@@ -97,7 +97,7 @@ export function SquadPanel() {
 function StatusTag({ participant, ready, now }: { participant: Participant; ready: boolean; now: number }) {
   if (!participant.online) {
     const left = participant.reconnectUntil ? Math.ceil((Date.parse(participant.reconnectUntil) - now) / 1000) : 0;
-    return left > 0 ? <span className="tag tag-yellow">Voltando {left}s</span> : <span className="tag tag-muted">Offline</span>;
+    return left > 0 ? <span className="tag tag-yellow">Voltando {left}s</span> : <span className="tag tag-muted">Desconectado</span>;
   }
   return ready ? <span className="tag tag-cyan">Pronto</span> : <span className="tag tag-muted">Esperando</span>;
 }

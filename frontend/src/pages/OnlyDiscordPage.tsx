@@ -9,14 +9,14 @@ export function OnlyDiscordPage() {
         <span className="tag tag-red private-tag">Acesso privado</span>
         <h1 className="px private-t">Só dentro do Discord</h1>
         <p className="private-d">
-          A roleta é exclusiva da call dos Anormais e só abre pela <b>Activity</b>, dentro de um canal de voz.
+          A roleta é exclusiva dos Anormais e só abre pela <b>atividade</b>, dentro de um canal de voz.
         </p>
         <ol className="private-steps">
           <li>
             <span className="private-n">1</span>Entre num canal de voz do servidor
           </li>
           <li>
-            <span className="private-n">2</span>Clique no foguete das Activities
+            <span className="private-n">2</span>Clique no foguete de atividades
           </li>
           <li>
             <span className="private-n">3</span>Escolha a Roleta dos Anormais
