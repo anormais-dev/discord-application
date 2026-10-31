@@ -1,6 +1,7 @@
 import { AdminControls } from "../components/AdminControls";
 import { CompactView } from "../components/CompactView";
 import { ErrorToast } from "../components/ErrorToast";
+import { Header } from "../components/Header";
 import { MapModal } from "../components/MapModal";
 import { ParticipantsPanel } from "../components/ParticipantsPanel";
 import { PlayerWheel } from "../components/PlayerWheel";
@@ -15,20 +16,23 @@ export function RoulettePage() {
   if (compact) return <CompactView />;
 
   return (
-    <main className="layout">
-      {status === "disconnected" && <div className="banner">Conexão perdida, reconectando...</div>}
-      <div className="stage">
-        <PlayerWheel />
-        <AdminControls />
-      </div>
-      <aside className="side">
-        <ParticipantsPanel />
-      </aside>
-      <div className="bottom">
-        <TeamsView />
-      </div>
-      <MapModal />
-      <ErrorToast />
-    </main>
+    <>
+      <Header />
+      <main className="layout">
+        {status === "disconnected" && <div className="banner">Conexão perdida, reconectando...</div>}
+        <div className="stage">
+          <PlayerWheel />
+          <AdminControls />
+        </div>
+        <aside className="side">
+          <ParticipantsPanel />
+        </aside>
+        <div className="bottom">
+          <TeamsView />
+        </div>
+        <MapModal />
+        <ErrorToast />
+      </main>
+    </>
   );
 }
