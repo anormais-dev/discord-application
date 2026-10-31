@@ -7,6 +7,8 @@ import (
 	"log"
 	"strconv"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/anormais-dev/discord-application/backend/pkg/discord"
 )
@@ -15,6 +17,10 @@ import (
 const DevTokenPrefix = "dev:"
 
 const maxDevNameLen = 32
+
+// Quanto tempo o usuário de um token fica guardado. Cada reconexão do WebSocket
+// autentica de novo, e sem cache isso bate no Discord toda vez (e esbarra no rate limit).
+const userCacheTTL = 10 * time.Minute
 
 var (
 	ErrNoDiscordClient = errors.New("credenciais do Discord não configuradas")
@@ -30,11 +36,24 @@ type DiscordClient interface {
 type AuthService struct {
 	discord DiscordClient
 	devAuth bool
+
+	mu    sync.Mutex
+	users map[userCacheKey]cachedUser
+}
+
+type userCacheKey struct {
+	accessToken string
+	guildID     string
+}
+
+type cachedUser struct {
+	user    discord.User
+	expires time.Time
 }
 
 // NewAuthService aceita discord nil quando não há credenciais (só faz sentido com devAuth).
 func NewAuthService(discord DiscordClient, devAuth bool) *AuthService {
-	return &AuthService{discord: discord, devAuth: devAuth}
+	return &AuthService{discord: discord, devAuth: devAuth, users: map[userCacheKey]cachedUser{}}
 }
 
 func (s *AuthService) ExchangeCode(ctx context.Context, code string) (string, error) {
@@ -53,17 +72,48 @@ func (s *AuthService) CurrentUser(ctx context.Context, accessToken, guildID stri
 	if s.discord == nil {
 		return nil, ErrNoDiscordClient
 	}
-	u, err := s.discord.CurrentUser(ctx, accessToken)
-	if err != nil || guildID == "" {
-		return u, err
+	key := userCacheKey{accessToken, guildID}
+	if u, ok := s.cached(key); ok {
+		return u, nil
 	}
 
-	if m, err := s.discord.GuildMember(ctx, accessToken, guildID); err != nil {
-		log.Printf("apelido no servidor: %v", err)
-	} else {
-		u.Nick = m.Nick
+	u, err := s.discord.CurrentUser(ctx, accessToken)
+	if err != nil {
+		return nil, err
 	}
+	if guildID != "" {
+		if m, err := s.discord.GuildMember(ctx, accessToken, guildID); err != nil {
+			log.Printf("apelido no servidor: %v", err)
+		} else {
+			u.Nick = m.Nick
+		}
+	}
+	s.store(key, u)
 	return u, nil
+}
+
+func (s *AuthService) cached(key userCacheKey) (*discord.User, bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	e, ok := s.users[key]
+	if !ok || time.Now().After(e.expires) {
+		return nil, false
+	}
+	u := e.user
+	return &u, true
+}
+
+// store aproveita para jogar fora o que já venceu; o mapa nunca passa de quem usou o app nos últimos minutos.
+func (s *AuthService) store(key userCacheKey, u *discord.User) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	now := time.Now()
+	for k, e := range s.users {
+		if now.After(e.expires) {
+			delete(s.users, k)
+		}
+	}
+	s.users[key] = cachedUser{user: *u, expires: now.Add(userCacheTTL)}
 }
 
 func devUser(name string) (*discord.User, error) {

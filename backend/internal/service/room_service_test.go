@@ -76,7 +76,7 @@ func TestRoomServiceCommitsSpinAfterDelay(t *testing.T) {
 	t.Fatalf("o giro deveria ter sido aplicado depois do CommitDelay")
 }
 
-func TestRoomServiceDetachInLobbyRemovesParticipant(t *testing.T) {
+func TestRoomServiceDetachInLobbyRemovesParticipantAfterGrace(t *testing.T) {
 	s := NewRoomService(repository.NewRoomRepository())
 	a := &fakeClient{id: "a"}
 	b := &fakeClient{id: "b"}
@@ -85,11 +85,58 @@ func TestRoomServiceDetachInLobbyRemovesParticipant(t *testing.T) {
 	s.Join("abc", model.Participant{ID: "a"})
 	s.Join("abc", model.Participant{ID: "b"})
 
+	s.DisconnectGrace = time.Hour
+	s.Detach("abc", a)
+	if got := b.last(); len(got.Participants) != 2 || got.AdminID != "a" || got.Participants[0].Online {
+		t.Fatalf("a deveria continuar como admin, só offline, veio %+v", got)
+	}
+	s.Attach("abc", a)
+	s.DisconnectGrace = 10 * time.Millisecond
 	s.Detach("abc", a)
 
-	if got := b.last(); len(got.Participants) != 1 || got.AdminID != "b" {
-		t.Fatalf("a deveria ter saído e b virado admin, veio %+v", got)
+	waitFor(t, s, func() bool {
+		got := b.last()
+		return len(got.Participants) == 1 && got.AdminID == "b"
+	}, "a deveria ter saído e b virado admin depois da tolerância")
+}
+
+func TestRoomServiceReconnectWithinGraceKeepsPlace(t *testing.T) {
+	s := NewRoomService(repository.NewRoomRepository())
+	s.DisconnectGrace = 20 * time.Millisecond
+	a := &fakeClient{id: "a"}
+	b := &fakeClient{id: "b"}
+	s.Attach("abc", a)
+	s.Attach("abc", b)
+	s.Join("abc", model.Participant{ID: "a"})
+	s.Join("abc", model.Participant{ID: "b"})
+	s.SetReady("abc", "a", true)
+
+	s.Detach("abc", a)
+	again := &fakeClient{id: "a"}
+	s.Attach("abc", again)
+	time.Sleep(4 * s.DisconnectGrace)
+
+	s.mu.Lock()
+	got := b.last()
+	s.mu.Unlock()
+	if len(got.Participants) != 2 || got.AdminID != "a" || !got.Ready["a"] || !got.Participants[0].Online {
+		t.Fatalf("quem reconecta dentro da tolerância deveria manter lugar, admin e pronto, veio %+v", got)
 	}
+}
+
+func waitFor(t *testing.T, s *RoomService, cond func() bool, msg string) {
+	t.Helper()
+	deadline := time.Now().Add(time.Second)
+	for time.Now().Before(deadline) {
+		s.mu.Lock()
+		ok := cond()
+		s.mu.Unlock()
+		if ok {
+			return
+		}
+		time.Sleep(5 * time.Millisecond)
+	}
+	t.Fatal(msg)
 }
 
 func TestRoomServiceAutoSpinRunsUntilFinished(t *testing.T) {
