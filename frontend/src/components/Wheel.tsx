@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { SpinState } from "../types/room";
+import { playConfetti, playTick } from "../utils/sound";
 import { POINTER_ANGLE, TAU, WHEEL_FONT, drawWheel, easeOutQuart } from "../utils/wheel";
 
 const SPIRAL_START = 0.15;
@@ -44,6 +45,12 @@ export function Wheel({ spin, ids, label, empty, celebrate, resultPrefix, settle
   const [size, setSize] = useState(0);
   // O canvas não espera a fonte carregar; redesenha quando ela chega.
   const [fontReady, setFontReady] = useState(false);
+  // Fatia que estava no ponteiro no quadro anterior: quando muda, toca o "tic".
+  const sliceUnderPointerRef = useRef<number | null>(null);
+  // Giro que já tocou o som de confete, para não repetir ao redesenhar.
+  const celebratedRef = useRef<string | null>(null);
+  const celebrateRef = useRef(celebrate);
+  celebrateRef.current = celebrate;
 
   const celebrationActive = !!landed && celebrate;
   const resultId = celebrationActive ? landed : spin ? null : settledId;
@@ -107,7 +114,20 @@ export function Wheel({ spin, ids, label, empty, celebrate, resultPrefix, settle
       if (anim) {
         progress = Math.min(1, (performance.now() - anim.startedAt) / anim.durationMs);
         rotationRef.current = anim.from + (anim.to - anim.from) * easeOutQuart(progress);
-        if (progress >= 1 && spin) setLanded(spin.winnerId);
+        if (progress < 1 && names.length > 1) {
+          const slice = TAU / names.length;
+          const atPointer = Math.floor(((((POINTER_ANGLE - rotationRef.current) % TAU) + TAU) % TAU) / slice);
+          if (sliceUnderPointerRef.current !== null && atPointer !== sliceUnderPointerRef.current) playTick();
+          sliceUnderPointerRef.current = atPointer;
+        }
+        if (progress >= 1 && spin) {
+          setLanded(spin.winnerId);
+          if (celebratedRef.current !== anim.key) {
+            celebratedRef.current = anim.key;
+            sliceUnderPointerRef.current = null;
+            if (celebrateRef.current) playConfetti();
+          }
+        }
       }
 
       const shouldBeDizzy = progress >= SPIRAL_START && progress < 1;

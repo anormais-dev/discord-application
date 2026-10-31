@@ -1,11 +1,30 @@
-import type { CSSProperties } from "react";
+import { useEffect, type CSSProperties } from "react";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { wsSend } from "../store/roomSlice";
 import { selectMe, selectParticipantsById, selectPermissions, selectRoom } from "../store/selectors";
-import type { Participant } from "../types/room";
+import type { Participant, RoomState } from "../types/room";
 import { plural, shortFormat, teamName } from "../utils/format";
+import { playFanfare, playSadTrombone } from "../utils/sound";
 import { SOLO_COLOR, TEAM_COLORS, pickNumber } from "./DraftView";
 import { Monkey } from "./Monkey";
+
+// Folga para o som do resultado não atropelar o confete do último giro.
+const RESULT_SOUND_DELAY_MS = 700;
+// Rodada que já tocou o som; a tela remonta ao voltar do PiP e não deve repetir.
+let soundPlayedFor = "";
+
+// Fanfarra para quem entrou num time, trombone triste para quem ficou de fora.
+function useResultSound(room: RoomState | null, me: string | null) {
+  const round = room ? room.teams.map((t) => t.map((p) => p.id).join(",")).join("|") : "";
+  const outcome = !room || !me ? null : room.teams.some((t) => t.some((p) => p.id === me)) ? "in" : room.pool.includes(me) ? "out" : null;
+
+  useEffect(() => {
+    if (!outcome || soundPlayedFor === round) return;
+    soundPlayedFor = round;
+    const id = setTimeout(outcome === "in" ? playFanfare : playSadTrombone, RESULT_SOUND_DELAY_MS);
+    return () => clearTimeout(id);
+  }, [outcome, round]);
+}
 
 // Fim do sorteio. Cada pessoa vê o próprio resultado em destaque: entrou num time ou ficou de fora.
 // Quem não participou (inclusive o admin, se só organizou) vê o resultado neutro.
@@ -15,6 +34,7 @@ export function ResultView() {
   const me = useAppSelector(selectMe);
   const byId = useAppSelector(selectParticipantsById);
   const perms = useAppSelector(selectPermissions);
+  useResultSound(room, me);
   if (!room) return null;
 
   const teams = room.format.teams;

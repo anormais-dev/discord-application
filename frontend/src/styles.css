@@ -586,7 +586,8 @@ h3 {
   gap: 14px;
 }
 
-.gear {
+/* Botões de ícone do cabeçalho (som e configurações). */
+.icon-btn {
   display: grid;
   place-items: center;
   width: 40px;
@@ -594,6 +595,10 @@ h3 {
   padding: 0;
   background: var(--panel-2);
   border: 2px solid var(--line);
+  color: var(--muted);
+}
+
+.icon-btn.on {
   color: var(--text);
 }
 

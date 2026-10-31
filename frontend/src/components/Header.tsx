@@ -4,6 +4,7 @@ import { selectPermissions, selectRoom } from "../store/selectors";
 import type { Phase } from "../types/room";
 import { GearIcon } from "./Icons";
 import { SettingsPanel } from "./SettingsPanel";
+import { SoundToggle } from "./SoundToggle";
 
 const STEPS: { phase: Phase; label: string }[] = [
   { phase: "lobby", label: "Lobby" },
@@ -11,7 +12,7 @@ const STEPS: { phase: Phase; label: string }[] = [
   { phase: "finished", label: "Times" },
 ];
 
-// Etapas à esquerda; à direita, as configurações (só o admin abre).
+// Etapas à esquerda; à direita, o som (para todos) e as configurações (só o admin abre).
 // O nome da call ficaria aqui também: ver o bloco comentado em services/discord.ts.
 export function Header() {
   const room = useAppSelector(selectRoom);
@@ -31,19 +32,22 @@ export function Header() {
           </div>
         ))}
       </nav>
-      {perms.isAdmin && (
-        <div className="top-r">
-          <button
-            className={`gear ${settingsOpen ? "on" : ""}`}
-            aria-label="Configurações"
-            aria-expanded={settingsOpen}
-            onClick={() => setSettingsOpen(!settingsOpen)}
-          >
-            <GearIcon />
-          </button>
-          {settingsOpen && <SettingsPanel onClose={() => setSettingsOpen(false)} />}
-        </div>
-      )}
+      <div className="top-r">
+        <SoundToggle />
+        {perms.isAdmin && (
+          <>
+            <button
+              className={`icon-btn gear ${settingsOpen ? "on" : ""}`}
+              aria-label="Configurações"
+              aria-expanded={settingsOpen}
+              onClick={() => setSettingsOpen(!settingsOpen)}
+            >
+              <GearIcon />
+            </button>
+            {settingsOpen && <SettingsPanel onClose={() => setSettingsOpen(false)} />}
+          </>
+        )}
+      </div>
     </header>
   );
 }

@@ -12,6 +12,18 @@ interface RoomSliceState {
   fatal: string | null;
   // Activity minimizada no PiP.
   compact: boolean;
+  // Sons desligados; a escolha fica salva no navegador.
+  muted: boolean;
+}
+
+export const MUTED_KEY = "sound-muted";
+
+function savedMuted() {
+  try {
+    return localStorage.getItem(MUTED_KEY) === "1";
+  } catch {
+    return false;
+  }
 }
 
 const initialState: RoomSliceState = {
@@ -22,6 +34,7 @@ const initialState: RoomSliceState = {
   error: null,
   fatal: null,
   compact: false,
+  muted: savedMuted(),
 };
 
 // Tratadas pelo wsMiddleware.
@@ -54,8 +67,12 @@ const roomSlice = createSlice({
     compactChanged(state, action: PayloadAction<boolean>) {
       state.compact = action.payload;
     },
+    mutedToggled(state) {
+      state.muted = !state.muted;
+    },
   },
 });
 
-export const { statusChanged, stateReceived, sessionFailed, errorReceived, errorCleared, compactChanged } = roomSlice.actions;
+export const { statusChanged, stateReceived, sessionFailed, errorReceived, errorCleared, compactChanged, mutedToggled } =
+  roomSlice.actions;
 export const roomReducer = roomSlice.reducer;
