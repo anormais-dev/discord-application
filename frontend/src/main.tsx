@@ -5,6 +5,11 @@ import { store } from "./store";
 import { startSession } from "./services/discord";
 import { savedDevName, startDevSession } from "./services/devSession";
 import { devAuth, inDiscord } from "./utils/runtime";
+// Fontes servidas pelo próprio app: o CSP do Discord bloqueia o Google Fonts.
+import "@fontsource/pixelify-sans/400.css";
+import "@fontsource/pixelify-sans/700.css";
+import "@fontsource/chakra-petch/400.css";
+import "@fontsource/chakra-petch/700.css";
 import "./styles.css";
 
 if (inDiscord) {
