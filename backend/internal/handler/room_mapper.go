@@ -38,6 +38,10 @@ func toParticipants(ps []model.Participant) []dto.ParticipantResponse {
 			Online:   p.Online,
 			JoinedAt: p.JoinedAt,
 		}
+		if !p.Online && !p.ReconnectUntil.IsZero() {
+			until := p.ReconnectUntil
+			out[i].ReconnectUntil = &until
+		}
 	}
 	return out
 }

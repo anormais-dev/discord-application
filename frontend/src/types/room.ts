@@ -11,6 +11,8 @@ export interface Participant {
   avatar: string;
   online: boolean;
   joinedAt: string;
+  // Prazo para voltar sem perder o lugar; só vem para quem caiu.
+  reconnectUntil?: string;
 }
 
 // Giro em andamento. Todos os clientes animam a partir destes dados.

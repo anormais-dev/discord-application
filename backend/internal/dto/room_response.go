@@ -13,6 +13,8 @@ type ParticipantResponse struct {
 	Avatar   string    `json:"avatar"`
 	Online   bool      `json:"online"`
 	JoinedAt time.Time `json:"joinedAt"`
+	// Só vem preenchido para quem caiu: prazo para voltar sem perder o lugar.
+	ReconnectUntil *time.Time `json:"reconnectUntil,omitempty"`
 }
 
 type SpinResponse struct {

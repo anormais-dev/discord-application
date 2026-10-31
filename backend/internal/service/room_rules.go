@@ -238,19 +238,22 @@ func connect(r *model.Room, userID string) {
 		return
 	}
 	r.Participants[i].Online = true
+	r.Participants[i].ReconnectUntil = time.Time{}
 	if r.AdminID == "" {
 		r.AdminID = userID
 	}
 }
 
 // disconnect só marca offline: uma queda rápida (alt-tab, rede) não pode tirar a
-// pessoa da roda. A saída de verdade vem em dropOffline, depois da tolerância.
-func disconnect(r *model.Room, userID string) {
+// pessoa da roda. A saída de verdade vem em dropOffline, depois da tolerância;
+// until é esse prazo, mostrado para a sala como contagem regressiva.
+func disconnect(r *model.Room, userID string, until time.Time) {
 	i := indexOf(r, userID)
 	if i < 0 {
 		return
 	}
 	r.Participants[i].Online = false
+	r.Participants[i].ReconnectUntil = until
 }
 
 // dropOffline tira da roda quem não voltou antes do primeiro giro; depois disso a

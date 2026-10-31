@@ -94,7 +94,7 @@ func (s *RoomService) Detach(instance string, c Client) {
 	}
 	delete(s.clients[instance], c)
 	if uid := c.UserID(); !s.hasUser(instance, uid) {
-		disconnect(room, uid)
+		disconnect(room, uid, time.Now().Add(s.DisconnectGrace))
 		key := graceKey{instance, uid}
 		s.stopGrace(key)
 		g := &graceTimer{}
