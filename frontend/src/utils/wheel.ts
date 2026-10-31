@@ -78,7 +78,8 @@ export function drawWheel(canvas: HTMLCanvasElement, names: string[], rotation: 
     if (i === names.length - 1 && i % SLICES.length === 0 && i > 0) [fill, text] = SLICES[1];
     ctx.fillStyle = fill;
     ctx.beginPath();
-    ctx.moveTo(c, c);
+    // Com uma pessoa só a fatia é o círculo inteiro; partir do centro desenharia um raio solto.
+    if (names.length > 1) ctx.moveTo(c, c);
     ctx.arc(c, c, radius, start, start + slice);
     ctx.closePath();
     ctx.fill();
