@@ -55,9 +55,9 @@ function note(ac: AudioContext, freq: number, start: number, duration: number, {
   osc.stop(start + duration + 0.02);
 }
 
-// Estalo de ruído curto, para o "pop" do confete.
-function pop(ac: AudioContext, start: number, volume = 0.12) {
-  const length = Math.floor(ac.sampleRate * 0.06);
+// Estalo de ruído curto: o "pop" do confete e o ataque do "tic" da roleta.
+function pop(ac: AudioContext, start: number, volume = 0.12, duration = 0.06) {
+  const length = Math.floor(ac.sampleRate * duration);
   const buffer = ac.createBuffer(1, length, ac.sampleRate);
   const data = buffer.getChannelData(0);
   for (let i = 0; i < length; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / length) ** 2;
@@ -69,14 +69,17 @@ function pop(ac: AudioContext, start: number, volume = 0.12) {
   src.start(start);
 }
 
-// "Tic" de uma fatia passando pelo ponteiro. Limitado para não virar um zumbido no começo do giro.
+// "Tic" de uma fatia passando pelo ponteiro, como a catraca de uma roleta: estalo de ruído
+// mais uma nota grave que cai. Precisa ser forte o bastante para aparecer por cima da voz da call.
+// Limitado para não virar um zumbido no começo do giro, quando as fatias passam muito rápido.
 export function playTick() {
   const ac = audio();
   if (!ac) return;
   const now = ac.currentTime;
-  if (now - lastTick < 0.035) return;
+  if (now - lastTick < 0.045) return;
   lastTick = now;
-  note(ac, 1400 + Math.random() * 300, now, 0.03, { volume: 0.04 });
+  pop(ac, now, 0.1, 0.015);
+  note(ac, 880 + Math.random() * 120, now, 0.05, { volume: 0.09, slideTo: 600 });
 }
 
 // Pop e arpejo subindo quando a roda para no sorteado.
