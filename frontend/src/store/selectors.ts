@@ -8,6 +8,7 @@ export const selectMe = (s: RootState) => s.room.me;
 export const selectFormats = (s: RootState) => s.room.formats;
 export const selectError = (s: RootState) => s.room.error;
 export const selectFatal = (s: RootState) => s.room.fatal;
+export const selectCompact = (s: RootState) => s.room.compact;
 
 export const selectParticipantsById = createSelector([selectRoom], (room) =>
   Object.fromEntries((room?.participants ?? []).map((p) => [p.id, p])),

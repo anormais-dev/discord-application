@@ -18,6 +18,8 @@ export function drawWheel(canvas: HTMLCanvasElement, names: string[], rotation: 
 
   const c = size / 2;
   const radius = c - 12;
+  // Na transição do PiP o Discord encolhe a janela a poucos pixels; com raio negativo o arc lança erro.
+  if (radius <= 0) return;
 
   if (names.length === 0) {
     ctx.fillStyle = "#2b2d31";
@@ -34,7 +36,9 @@ export function drawWheel(canvas: HTMLCanvasElement, names: string[], rotation: 
   }
 
   const slice = TAU / names.length;
-  const fontSize = Math.max(11, Math.min(18, 220 / names.length));
+  // A roda tem 380px no tamanho cheio; menor que isso, o texto encolhe junto.
+  const scale = Math.min(1, size / 380);
+  const fontSize = Math.max(9, Math.min(18, 220 / names.length) * scale);
   names.forEach((name, i) => {
     const start = rotation + i * slice;
     ctx.fillStyle = COLORS[i % COLORS.length];

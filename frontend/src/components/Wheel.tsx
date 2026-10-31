@@ -40,6 +40,8 @@ export function Wheel({ spin, ids, label, empty, celebrate, resultPrefix, settle
   const dizzyRef = useRef(false);
   const [dizzy, setDizzy] = useState(false);
   const [landed, setLanded] = useState<string | null>(null);
+  // Largura do canvas; muda quando o Discord redimensiona a janela e força redesenhar.
+  const [size, setSize] = useState(0);
 
   const celebrationActive = !!landed && celebrate;
   const resultId = celebrationActive ? landed : spin ? null : settledId;
@@ -72,6 +74,14 @@ export function Wheel({ spin, ids, label, empty, celebrate, resultPrefix, settle
     animationRef.current = { key, winnerId: spin.winnerId, from, to, startedAt: performance.now(), durationMs: spin.durationMs };
     setLanded(null);
   }, [spin]);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const observer = new ResizeObserver(() => setSize(canvas.clientWidth));
+    observer.observe(canvas);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -112,7 +122,7 @@ export function Wheel({ spin, ids, label, empty, celebrate, resultPrefix, settle
     };
     render();
     return () => cancelAnimationFrame(frame);
-  }, [names.join("\u0000"), spin, emptyText]);
+  }, [names.join("\u0000"), spin, emptyText, size]);
 
   return (
     <div className="wheel">
