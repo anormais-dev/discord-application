@@ -244,7 +244,7 @@ h3 {
 .wheel-stage {
   position: relative;
   /* Limita pela altura também, para caber quando o Discord deixa a janela baixa. */
-  width: min(430px, 100%, 60vh);
+  width: min(520px, 100%, 68vh);
   aspect-ratio: 1;
 }
 
@@ -694,7 +694,7 @@ h3 {
 }
 
 .lobby .wheel {
-  flex: 0 1 430px;
+  flex: 0 1 520px;
 }
 
 .ctrl {
@@ -1051,7 +1051,7 @@ h3 {
 }
 
 .draft .wheel-stage {
-  width: min(400px, 100%, 52vh);
+  width: min(480px, 100%, 60vh);
 }
 
 .draft-actions {
@@ -1379,7 +1379,7 @@ h3 {
   flex-direction: column;
   align-items: center;
   gap: 14px;
-  width: min(460px, 100%);
+  width: min(500px, 100%);
   max-height: 100%;
   box-sizing: border-box;
   overflow-y: auto;
@@ -1406,7 +1406,7 @@ h3 {
 }
 
 .modal .wheel-stage {
-  width: min(340px, 100%, 50vh);
+  width: min(400px, 100%, 56vh);
 }
 
 .modal-actions {

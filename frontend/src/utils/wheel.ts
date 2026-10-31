@@ -1,23 +1,25 @@
 export const TAU = Math.PI * 2;
 // O ponteiro fica no topo da roda.
 export const POINTER_ANGLE = -Math.PI / 2;
-// Fatias claras e escuras alternadas, com o texto na cor que contrasta.
+// Fatias coloridas, em ordem que alterna cores quentes e frias para vizinhas não se confundirem.
+// O texto usa a cor que dá mais contraste com cada fundo.
 const SLICES = [
   ["#ff4655", "#0a0c10"],
-  ["#1f2430", "#ece8e1"],
   ["#19d3c5", "#0a0c10"],
-  ["#2a1e2a", "#ece8e1"],
   ["#ffd447", "#0a0c10"],
-  ["#1f2430", "#ece8e1"],
-  ["#8b5cf6", "#ece8e1"],
-  ["#162a2a", "#ece8e1"],
+  ["#8b5cf6", "#ffffff"],
+  ["#f97316", "#0a0c10"],
+  ["#3b82f6", "#0a0c10"],
+  ["#22c55e", "#0a0c10"],
+  ["#ec4899", "#0a0c10"],
 ];
 const DARK = "#0a0c10";
 const LINE = "#2c3444";
 const LIGHTS = ["#ff4655", "#ffd447"];
 export const WHEEL_FONT = '"Chakra Petch", system-ui, sans-serif';
-// Tamanho de referência do desenho; menor que isso, tudo encolhe junto.
+// Tamanho de referência do desenho: menor que isso, tudo encolhe junto; maior, cresce até 20%.
 const BASE_SIZE = 430;
+const MAX_SCALE = 1.2;
 
 export const easeOutQuart = (t: number) => 1 - (1 - t) ** 4;
 
@@ -33,7 +35,7 @@ export function drawWheel(canvas: HTMLCanvasElement, names: string[], rotation: 
   ctx.clearRect(0, 0, size, size);
 
   const c = size / 2;
-  const scale = Math.min(1, size / BASE_SIZE);
+  const scale = Math.min(MAX_SCALE, size / BASE_SIZE);
   const ring = Math.max(8, 18 * scale);
   const radius = c - ring;
   // Na transição do PiP o Discord encolhe a janela a poucos pixels; com raio negativo o arc lança erro.
