@@ -1,4 +1,3 @@
-import { AdminControls } from "../components/AdminControls";
 import { CompactView } from "../components/CompactView";
 import { DraftView } from "../components/DraftView";
 import { ErrorToast } from "../components/ErrorToast";
@@ -6,8 +5,8 @@ import { Header } from "../components/Header";
 import { LobbyControls } from "../components/LobbyControls";
 import { MapModal } from "../components/MapModal";
 import { PlayerWheel } from "../components/PlayerWheel";
+import { ResultView } from "../components/ResultView";
 import { SquadPanel } from "../components/SquadPanel";
-import { TeamsView } from "../components/TeamsView";
 import { useAppSelector } from "../store/hooks";
 import { selectCompact, selectRoom, selectStatus } from "../store/selectors";
 
@@ -33,17 +32,7 @@ export function RoulettePage() {
         </main>
       )}
       {room.phase === "drafting" && <DraftView />}
-      {room.phase === "finished" && (
-        <main className="layout">
-          <div className="stage">
-            <PlayerWheel />
-            <AdminControls />
-          </div>
-          <div className="bottom">
-            <TeamsView />
-          </div>
-        </main>
-      )}
+      {room.phase === "finished" && <ResultView />}
       <MapModal />
       <ErrorToast />
     </>
