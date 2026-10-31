@@ -25,7 +25,7 @@ const initialState: RoomSliceState = {
 };
 
 // Tratadas pelo wsMiddleware.
-export const wsConnect = createAction<{ accessToken: string; instanceId: string; guildId?: string | null }>("room/wsConnect");
+export const wsConnect = createAction<{ accessToken: string; instanceId: string; guildId?: string | null; channelId?: string | null }>("room/wsConnect");
 export const wsSend = createAction<ClientMessage>("room/wsSend");
 
 const roomSlice = createSlice({

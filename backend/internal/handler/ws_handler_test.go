@@ -65,9 +65,14 @@ type testClient struct {
 
 func dial(t *testing.T, srv *httptest.Server, token string) *testClient {
 	t.Helper()
+	return dialQuery(t, srv, token, "instance=abc")
+}
+
+func dialQuery(t *testing.T, srv *httptest.Server, token, query string) *testClient {
+	t.Helper()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	url := "ws" + strings.TrimPrefix(srv.URL, "http") + "/api/ws?instance=abc"
+	url := "ws" + strings.TrimPrefix(srv.URL, "http") + "/api/ws?" + query
 	conn, _, err := websocket.Dial(ctx, url, nil)
 	if err != nil {
 		t.Fatalf("dial: %v", err)
@@ -189,5 +194,24 @@ func TestWSMapSpinOnlyAdmin(t *testing.T) {
 	final := b.until(func(m received) bool { return m.Type == "state" && m.Room.Map != "" })
 	if final.Room.Map != "Ascent" && final.Room.Map != "Bind" {
 		t.Fatalf("mapa inesperado: %q", final.Room.Map)
+	}
+}
+
+func TestWSSeparatesRoomsByChannel(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(NewWSHandler(service.NewAuthService(fakeDiscord{}, false), service.NewRoomService(repository.NewRoomRepository()), newTestMaps()).ServeWS))
+	defer srv.Close()
+
+	a := dialQuery(t, srv, "alice", "instance=abc&guild=g&channel=call1")
+	a.send(map[string]any{"type": "join"})
+	a.until(func(m received) bool { return m.Type == "state" && len(m.Room.Participants) == 1 })
+
+	other := dialQuery(t, srv, "bob", "instance=abc&guild=g&channel=call2")
+	if m := other.until(func(m received) bool { return m.Type == "state" }); len(m.Room.Participants) != 0 {
+		t.Fatalf("outra call não deveria ver a sala da primeira, veio %+v", m.Room.Participants)
+	}
+
+	same := dialQuery(t, srv, "carol", "instance=xyz&guild=g&channel=call1")
+	if m := same.until(func(m received) bool { return m.Type == "state" }); len(m.Room.Participants) != 1 {
+		t.Fatalf("a mesma call deveria cair na mesma sala, veio %+v", m.Room.Participants)
 	}
 }

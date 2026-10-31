@@ -15,10 +15,14 @@ export const wsMiddleware: Middleware = (store) => {
   let retryTimer: ReturnType<typeof setTimeout> | undefined;
   let retryDelay = RECONNECT_MIN_MS;
 
-  const open = ({ accessToken, instanceId, guildId }: ConnectParams) => {
+  const open = ({ accessToken, instanceId, guildId, channelId }: ConnectParams) => {
     clearTimeout(retryTimer);
     const protocol = location.protocol === "https:" ? "wss" : "ws";
-    const url = `${protocol}://${location.host}${apiBase}/ws?instance=${encodeURIComponent(instanceId)}`;
+    // guild e channel separam a sala por call; sem eles o backend usa a instance.
+    const query = new URLSearchParams({ instance: instanceId });
+    if (guildId) query.set("guild", guildId);
+    if (channelId) query.set("channel", channelId);
+    const url = `${protocol}://${location.host}${apiBase}/ws?${query}`;
     store.dispatch(statusChanged("connecting"));
 
     const ws = new WebSocket(url);

@@ -41,13 +41,14 @@ func NewWSHandler(auth *service.AuthService, rooms *service.RoomService, maps *s
 	return &WSHandler{auth: auth, rooms: rooms, maps: maps}
 }
 
-// ServeWS trata GET /api/ws?instance=<instanceId>.
+// ServeWS trata GET /api/ws?instance=<instanceId>&guild=<guildId>&channel=<channelId>.
 func (h *WSHandler) ServeWS(w http.ResponseWriter, r *http.Request) {
-	instance := r.URL.Query().Get("instance")
-	if instance == "" {
+	q := r.URL.Query()
+	if q.Get("instance") == "" {
 		http.Error(w, "instance obrigatório", http.StatusBadRequest)
 		return
 	}
+	instance := roomKey(q.Get("instance"), q.Get("guild"), q.Get("channel"))
 	conn, err := websocket.Accept(w, r, &websocket.AcceptOptions{
 		OriginPatterns: []string{"*.discordsays.com"},
 	})
@@ -82,6 +83,15 @@ func (h *WSHandler) ServeWS(w http.ResponseWriter, r *http.Request) {
 			c.enqueue(mustMarshal(dto.ErrorMessage{Type: "error", Message: err.Error()}))
 		}
 	}
+}
+
+// roomKey prende a sala ao canal de voz: cada call tem a sua, e reabrir a Activity
+// na mesma call volta para a mesma sala. Sem canal (dev), fica a instance.
+func roomKey(instance, guild, channel string) string {
+	if channel == "" {
+		return instance
+	}
+	return "channel:" + guild + ":" + channel
 }
 
 func (h *WSHandler) authenticate(ctx context.Context, conn *websocket.Conn) (*discord.User, error) {
