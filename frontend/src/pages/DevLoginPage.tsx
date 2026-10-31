@@ -17,7 +17,7 @@ export function DevLoginPage() {
         <h2>Modo de teste (fora do Discord)</h2>
         <p className="muted">Escolha um nome. Abra outras abas com nomes diferentes para simular mais pessoas.</p>
         <input autoFocus value={name} maxLength={32} onChange={(e) => setName(e.target.value)} placeholder="Seu nome" />
-        <button className="primary" type="submit" disabled={!name.trim()}>
+        <button className="btn btn-red px" type="submit" disabled={!name.trim()}>
           Entrar
         </button>
       </form>
