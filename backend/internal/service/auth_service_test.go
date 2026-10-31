@@ -74,3 +74,30 @@ func TestCurrentUserIgnoresGuildMemberError(t *testing.T) {
 		t.Fatalf("falha no apelido não deveria impedir o login: %+v %v", u, err)
 	}
 }
+
+type countingDiscord struct {
+	nickDiscord
+	calls int
+}
+
+func (d *countingDiscord) CurrentUser(ctx context.Context, token string) (*discord.User, error) {
+	d.calls++
+	return d.nickDiscord.CurrentUser(ctx, token)
+}
+
+func TestCurrentUserIsCachedPerToken(t *testing.T) {
+	d := &countingDiscord{}
+	s := NewAuthService(d, false)
+	for range 3 {
+		if u, err := s.CurrentUser(context.Background(), "t", "g1"); err != nil || u.Nick != "Aninha" {
+			t.Fatalf("esperado apelido Aninha, veio %+v %v", u, err)
+		}
+	}
+	if d.calls != 1 {
+		t.Fatalf("reconexões com o mesmo token deveriam usar o cache, chamou o Discord %d vezes", d.calls)
+	}
+	s.CurrentUser(context.Background(), "outro", "g1")
+	if d.calls != 2 {
+		t.Fatalf("token diferente deveria ir no Discord, chamou %d vezes", d.calls)
+	}
+}
