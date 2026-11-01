@@ -123,7 +123,7 @@ func (s *MapService) Image(ctx context.Context, uuid, kind string) (MapImage, er
 	if err != nil {
 		return MapImage{}, ErrMapsUnavailable
 	}
-	img = MapImage{Data: data, ContentType: contentType}
+	img = shrink(data, contentType)
 	s.imgMu.Lock()
 	if s.imgSet == nil {
 		s.imgSet = map[string]MapImage{}

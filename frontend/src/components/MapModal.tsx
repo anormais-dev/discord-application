@@ -9,6 +9,10 @@ import { playTick, playVictory } from "../utils/sound";
 import { Confetti } from "./Confetti";
 import { ValorantIcon } from "./Icons";
 
+function preload(path?: string) {
+  if (path) new Image().src = apiBase + path;
+}
+
 // Sem imagem (API sem arte ou fora do ar) o card fica s\u00f3 com o nome.
 function MapCard({ map, image, featured = false }: { map: string; image?: string; featured?: boolean }) {
   const [imageMissing, setImageMissing] = useState(false);
@@ -66,6 +70,15 @@ export function MapModal() {
   );
   const carouselItems = carousel.items;
   const spinKey = spin?.startedAt;
+
+  // Adianta o download: as faixas assim que a lista chega (o modal abre já com as fotos) e o
+  // splash do sorteado quando o giro começa, que só aparece uns 5s depois.
+  useEffect(() => {
+    for (const img of Object.values(images)) preload(img.card);
+  }, [data]);
+  useEffect(() => {
+    if (spin) preload(images[spin.winnerId]?.splash);
+  }, [spinKey, data]);
 
   useEffect(() => {
     if (!room?.mapOpen) {

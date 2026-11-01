@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"errors"
 	"log"
 	"net/http"
@@ -30,6 +31,7 @@ func Build(cfg *config.Config) (http.Handler, error) {
 	authService := service.NewAuthService(dc, cfg.DevAuth)
 	roomService := service.NewRoomService(repository.NewRoomRepository())
 	mapService := service.NewMapService(valorant.NewClient())
+	go mapService.Warm(context.Background())
 
 	handlers := routes.Handlers{
 		Config: handler.NewConfigHandler(cfg.DiscordClientID),
