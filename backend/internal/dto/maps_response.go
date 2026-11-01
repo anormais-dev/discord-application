@@ -2,7 +2,7 @@ package dto
 
 type MapsResponse struct {
 	Maps []string `json:"maps"`
-	// Artes de cada mapa pelo nome; pode faltar mapa se a API não tiver imagem.
+	// Caminhos das artes de cada mapa pelo nome, relativos a /api; pode faltar mapa se a API não tiver imagem.
 	Images map[string]MapImagesResponse `json:"images"`
 }
 

@@ -11,9 +11,10 @@ import (
 )
 
 type fakeValorant struct {
-	maps  []valorant.Map
-	err   error
-	calls int
+	maps      []valorant.Map
+	err       error
+	calls     int
+	imageURLs []string
 }
 
 func (f *fakeValorant) Maps(context.Context) ([]valorant.Map, error) {
@@ -21,8 +22,13 @@ func (f *fakeValorant) Maps(context.Context) ([]valorant.Map, error) {
 	return f.maps, f.err
 }
 
+func (f *fakeValorant) Image(_ context.Context, url string) ([]byte, string, error) {
+	f.imageURLs = append(f.imageURLs, url)
+	return []byte("png de " + url), "image/png", nil
+}
+
 var apiMaps = []valorant.Map{
-	{DisplayName: "Haven", TacticalDescription: "A/B/C Sites", ListViewIcon: "haven-card.png", Splash: "haven-splash.png"},
+	{UUID: "haven-id", DisplayName: "Haven", TacticalDescription: "A/B/C Sites", ListViewIcon: "haven-card.png", Splash: "haven-splash.png"},
 	{DisplayName: "The Range"},
 	{DisplayName: "Ascent", TacticalDescription: "A/B Sites"},
 	{DisplayName: "Skirmish A"},
@@ -73,10 +79,34 @@ func TestImagesComeWithTheCompetitiveMaps(t *testing.T) {
 		t.Fatal(err)
 	}
 	images := s.Images()
-	if got := images["Haven"]; got != (MapImages{Card: "haven-card.png", Splash: "haven-splash.png"}) {
+	if got := images["Haven"]; got != (MapImages{UUID: "haven-id", Card: "haven-card.png", Splash: "haven-splash.png"}) {
 		t.Fatalf("imagens do Haven = %+v", got)
 	}
 	if _, ok := images["The Range"]; ok {
 		t.Fatalf("mapa fora do competitivo não deveria ter imagem")
+	}
+}
+
+func TestImageDownloadsOnceAndOnlyKnownMaps(t *testing.T) {
+	api := &fakeValorant{maps: apiMaps}
+	s := NewMapService(api)
+
+	for range 2 {
+		img, err := s.Image(context.Background(), "haven-id", "splash")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if string(img.Data) != "png de haven-splash.png" || img.ContentType != "image/png" {
+			t.Fatalf("imagem = %+v", img)
+		}
+	}
+	if !slices.Equal(api.imageURLs, []string{"haven-splash.png"}) {
+		t.Fatalf("deveria baixar uma vez só, baixou %v", api.imageURLs)
+	}
+
+	for _, c := range [][2]string{{"outro-id", "card"}, {"haven-id", "minimap"}} {
+		if _, err := s.Image(context.Background(), c[0], c[1]); !errors.Is(err, ErrMapImageNotFound) {
+			t.Fatalf("%v: erro = %v, esperado ErrMapImageNotFound", c, err)
+		}
 	}
 }

@@ -18,6 +18,7 @@ func NewRouter(h Handlers, staticDir string) http.Handler {
 
 	mux.HandleFunc("GET /api/config", h.Config.Get)
 	mux.HandleFunc("GET /api/maps", h.Maps.List)
+	mux.HandleFunc("GET /api/maps/{id}/{kind}", h.Maps.Image)
 	mux.HandleFunc("POST /api/token", h.Token.ExchangeCode)
 	mux.HandleFunc("GET /api/ws", h.WS.ServeWS)
 	mux.Handle("/", http.FileServer(http.Dir(staticDir)))

@@ -4,7 +4,7 @@ import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { wsSend } from "../store/roomSlice";
 import { selectPermissions, selectRoom } from "../store/selectors";
 import type { SpinState } from "../types/room";
-import { mediaUrl } from "../utils/runtime";
+import { apiBase } from "../utils/runtime";
 import { playTick } from "../utils/sound";
 import { ValorantIcon } from "./Icons";
 
@@ -15,7 +15,7 @@ function MapCard({ map, image, featured = false }: { map: string; image?: string
   return (
     <article className={`map-card${featured ? " map-card-featured" : ""}`}>
       <div className="map-card-image">
-        {image && !imageMissing && <img src={mediaUrl(image)} alt="" onError={() => setImageMissing(true)} />}
+        {image && !imageMissing && <img src={apiBase + image} alt="" onError={() => setImageMissing(true)} />}
       </div>
       <strong>{map}</strong>
     </article>
