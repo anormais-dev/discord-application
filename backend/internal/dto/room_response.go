@@ -13,6 +13,8 @@ type ParticipantResponse struct {
 	Avatar   string    `json:"avatar"`
 	Online   bool      `json:"online"`
 	JoinedAt time.Time `json:"joinedAt"`
+	// Só vem preenchido para quem caiu: prazo para voltar sem perder o lugar.
+	ReconnectUntil *time.Time `json:"reconnectUntil,omitempty"`
 }
 
 type SpinResponse struct {
@@ -39,4 +41,11 @@ type RoomResponse struct {
 	MapSpin      *SpinResponse           `json:"mapSpin"`
 	Map          string                  `json:"map"`
 	MapOpen      bool                    `json:"mapOpen"`
+	Cancelled    *CancellationResponse   `json:"cancelled"`
+}
+
+type CancellationResponse struct {
+	ByID   string    `json:"byId"`
+	ByName string    `json:"byName"`
+	At     time.Time `json:"at"`
 }

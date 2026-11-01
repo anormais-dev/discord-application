@@ -196,3 +196,35 @@ func TestRoomServiceCommitsMapSpinAfterDelay(t *testing.T) {
 	}
 	t.Fatalf("o mapa deveria ter sido aplicado depois do CommitDelay")
 }
+
+func TestRoomServiceOldTimerDoesNotCommitSpinAfterCancel(t *testing.T) {
+	s := NewRoomService(repository.NewRoomRepository())
+	s.CommitDelay = 100 * time.Millisecond
+	a := &fakeClient{id: "a"}
+	s.Attach("abc", a)
+	for _, id := range []string{"a", "b", "c"} {
+		s.Join("abc", model.Participant{ID: id})
+		s.SetReady("abc", id, true)
+	}
+	s.SetFormat("abc", "a", model.Format{Teams: 2, Size: 1})
+
+	if err := s.Spin("abc", "a"); err != nil {
+		t.Fatal(err)
+	}
+	time.Sleep(40 * time.Millisecond)
+	if err := s.CancelDraft("abc", "a"); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.Spin("abc", "a"); err != nil {
+		t.Fatal(err)
+	}
+
+	// O timer do primeiro giro vence aqui; o segundo giro ainda tem que estar rodando.
+	time.Sleep(80 * time.Millisecond)
+	s.mu.Lock()
+	got := a.last()
+	s.mu.Unlock()
+	if got.CurrentSpin == nil || got.Picks != 0 {
+		t.Fatalf("o timer antigo fechou o giro novo: picks=%d", got.Picks)
+	}
+}

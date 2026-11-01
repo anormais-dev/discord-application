@@ -31,6 +31,11 @@ export const startSession = createAsyncThunk("session/start", async (_, { dispat
         dispatch(compactChanged(layout_mode === Common.LayoutModeTypeObject.PIP)),
       )
       .catch((err) => console.warn("layout mode indisponível", err));
+    // Nome da call no cabeçalho, desligado por enquanto: o getChannel exige o escopo "guilds",
+    // e adicioná-lo no authorize acima faz todo mundo aceitar a permissão do Discord de novo.
+    // Para ligar: incluir "guilds" no scope, criar uma action para guardar o nome e mostrá-lo no Header.
+    // const channel = discordSdk.channelId ? await discordSdk.commands.getChannel({ channel_id: discordSdk.channelId }) : null;
+    // if (channel?.name) dispatch(callNameChanged(channel.name));
     dispatch(
       wsConnect({
         accessToken: access_token,

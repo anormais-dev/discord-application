@@ -1,7 +1,25 @@
 export const TAU = Math.PI * 2;
 // O ponteiro fica no topo da roda.
 export const POINTER_ANGLE = -Math.PI / 2;
-const COLORS = ["#5865f2", "#eb459e", "#57f287", "#fee75c", "#ed4245", "#3ba55c", "#faa61a", "#9b59b6"];
+// Fatias coloridas, em ordem que alterna cores quentes e frias para vizinhas não se confundirem.
+// O texto usa a cor que dá mais contraste com cada fundo.
+const SLICES = [
+  ["#ff4655", "#0a0c10"],
+  ["#19d3c5", "#0a0c10"],
+  ["#ffd447", "#0a0c10"],
+  ["#8b5cf6", "#ffffff"],
+  ["#f97316", "#0a0c10"],
+  ["#3b82f6", "#0a0c10"],
+  ["#22c55e", "#0a0c10"],
+  ["#ec4899", "#0a0c10"],
+];
+const DARK = "#0a0c10";
+const LINE = "#2c3444";
+const LIGHTS = ["#ff4655", "#ffd447"];
+export const WHEEL_FONT = '"Chakra Petch", system-ui, sans-serif';
+// Tamanho de referência do desenho: menor que isso, tudo encolhe junto; maior, cresce até 20%.
+const BASE_SIZE = 430;
+const MAX_SCALE = 1.2;
 
 export const easeOutQuart = (t: number) => 1 - (1 - t) ** 4;
 
@@ -17,40 +35,58 @@ export function drawWheel(canvas: HTMLCanvasElement, names: string[], rotation: 
   ctx.clearRect(0, 0, size, size);
 
   const c = size / 2;
-  const radius = c - 12;
+  const scale = Math.min(MAX_SCALE, size / BASE_SIZE);
+  const ring = Math.max(8, 18 * scale);
+  const radius = c - ring;
   // Na transição do PiP o Discord encolhe a janela a poucos pixels; com raio negativo o arc lança erro.
   if (radius <= 0) return;
 
+  // Aro escuro com as luzes de fliperama.
+  ctx.fillStyle = DARK;
+  ctx.strokeStyle = LINE;
+  ctx.lineWidth = Math.max(2, 4 * scale);
+  ctx.beginPath();
+  ctx.arc(c, c, c - ctx.lineWidth / 2, 0, TAU);
+  ctx.fill();
+  ctx.stroke();
+  const light = Math.max(3, 6 * scale);
+  for (let i = 0; i < 24; i++) {
+    const a = (i / 24) * TAU;
+    ctx.fillStyle = LIGHTS[i % 2];
+    ctx.fillRect(c + (c - ring / 2) * Math.cos(a) - light / 2, c + (c - ring / 2) * Math.sin(a) - light / 2, light, light);
+  }
+
+  const hub = size * 0.2;
   if (names.length === 0) {
-    ctx.fillStyle = "#2b2d31";
+    ctx.fillStyle = "#1f2430";
     ctx.beginPath();
     ctx.arc(c, c, radius, 0, TAU);
     ctx.fill();
-    ctx.fillStyle = "#949ba4";
-    ctx.font = "16px system-ui, sans-serif";
+    ctx.fillStyle = "#7c8698";
+    ctx.font = `700 ${Math.max(11, 15 * scale)}px ${WHEEL_FONT}`;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText(emptyText, c, c);
-    drawPointer(ctx, c);
+    ctx.fillText(emptyText, c, c + hub + 18 * scale);
+    drawHub(ctx, c, hub, scale);
+    drawPointer(ctx, c, scale);
     return;
   }
 
   const slice = TAU / names.length;
-  // A roda tem 380px no tamanho cheio; menor que isso, o texto encolhe junto.
-  const scale = Math.min(1, size / 380);
-  const fontSize = Math.max(9, Math.min(18, 220 / names.length) * scale);
   names.forEach((name, i) => {
     const start = rotation + i * slice;
-    ctx.fillStyle = COLORS[i % COLORS.length];
+    let [fill, text] = SLICES[i % SLICES.length];
     // Evita duas fatias vizinhas da mesma cor quando fecha a volta.
-    if (i === names.length - 1 && i % COLORS.length === 0 && i > 0) ctx.fillStyle = COLORS[1];
+    if (i === names.length - 1 && i % SLICES.length === 0 && i > 0) [fill, text] = SLICES[1];
+    ctx.fillStyle = fill;
     ctx.beginPath();
-    ctx.moveTo(c, c);
+    // Com uma pessoa só a fatia é o círculo inteiro; partir do centro desenharia um raio solto.
+    if (names.length > 1) ctx.moveTo(c, c);
     ctx.arc(c, c, radius, start, start + slice);
     ctx.closePath();
     ctx.fill();
-    ctx.strokeStyle = "#1e1f22";
-    ctx.lineWidth = 2;
+    ctx.strokeStyle = DARK;
+    ctx.lineWidth = Math.max(1.5, 3 * scale);
     ctx.stroke();
 
     ctx.save();
@@ -59,29 +95,55 @@ export function drawWheel(canvas: HTMLCanvasElement, names: string[], rotation: 
     // Na metade esquerda o texto giraria de ponta-cabeça; vira meia volta e ancora pelo outro lado.
     const flipped = Math.cos(mid) < 0;
     ctx.rotate(flipped ? mid + Math.PI : mid);
-    ctx.fillStyle = "#111214";
-    ctx.font = `600 ${fontSize}px system-ui, sans-serif`;
+    const label = name.toUpperCase();
+    // Nomes longos ficam menores antes de serem cortados.
+    const fontSize = Math.max(9, Math.min(15, 220 / names.length) * scale * Math.min(1, 7 / Math.max(7, label.length)));
+    ctx.fillStyle = text;
+    ctx.font = `700 ${fontSize}px ${WHEEL_FONT}`;
     ctx.textAlign = flipped ? "left" : "right";
     ctx.textBaseline = "middle";
-    ctx.fillText(truncate(ctx, name, radius - 40), flipped ? -(radius - 14) : radius - 14, 0);
+    const edge = radius - 12 * scale;
+    ctx.fillText(truncate(ctx, label, edge - hub - 8 * scale), flipped ? -edge : edge, 0);
     ctx.restore();
   });
 
-  ctx.fillStyle = "#1e1f22";
-  ctx.beginPath();
-  ctx.arc(c, c, 22, 0, TAU);
-  ctx.fill();
-  drawPointer(ctx, c);
+  drawHub(ctx, c, hub, scale);
+  drawPointer(ctx, c, scale);
 }
 
-function drawPointer(ctx: CanvasRenderingContext2D, c: number) {
-  ctx.fillStyle = "#f2f3f5";
+// Miolo escuro com borda amarela, onde fica o macaco.
+function drawHub(ctx: CanvasRenderingContext2D, c: number, hub: number, scale: number) {
+  ctx.fillStyle = DARK;
+  ctx.strokeStyle = "#ffd447";
+  ctx.lineWidth = Math.max(2, 3 * scale);
   ctx.beginPath();
-  ctx.moveTo(c - 12, 2);
-  ctx.lineTo(c + 12, 2);
-  ctx.lineTo(c, 30);
+  ctx.arc(c, c, hub, 0, TAU);
+  ctx.fill();
+  ctx.stroke();
+}
+
+// Ponteiro em degraus, como pixel art.
+function drawPointer(ctx: CanvasRenderingContext2D, c: number, scale: number) {
+  const u = Math.max(2, 4 * scale);
+  ctx.fillStyle = "#ece8e1";
+  ctx.strokeStyle = DARK;
+  ctx.lineWidth = Math.max(1, 2 * scale);
+  ctx.beginPath();
+  ctx.moveTo(c - 3.5 * u, 0);
+  ctx.lineTo(c + 3.5 * u, 0);
+  ctx.lineTo(c + 3.5 * u, 2 * u);
+  ctx.lineTo(c + 2 * u, 2 * u);
+  ctx.lineTo(c + 2 * u, 4 * u);
+  ctx.lineTo(c + u, 4 * u);
+  ctx.lineTo(c + u, 6 * u);
+  ctx.lineTo(c - u, 6 * u);
+  ctx.lineTo(c - u, 4 * u);
+  ctx.lineTo(c - 2 * u, 4 * u);
+  ctx.lineTo(c - 2 * u, 2 * u);
+  ctx.lineTo(c - 3.5 * u, 2 * u);
   ctx.closePath();
   ctx.fill();
+  ctx.stroke();
 }
 
 function truncate(ctx: CanvasRenderingContext2D, text: string, max: number) {

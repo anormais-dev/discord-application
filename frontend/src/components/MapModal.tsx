@@ -2,6 +2,7 @@ import { useGetMapsQuery } from "../services/api";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { wsSend } from "../store/roomSlice";
 import { selectPermissions, selectRoom } from "../store/selectors";
+import { ValorantIcon } from "./Icons";
 import { Wheel } from "./Wheel";
 
 export function MapModal() {
@@ -17,7 +18,13 @@ export function MapModal() {
   return (
     <div className="modal-backdrop">
       <section className="panel modal" role="dialog" aria-modal="true" aria-labelledby="map-modal-title">
-        <h2 id="map-modal-title">Mapa do Valorant</h2>
+        <div className="panel-h">
+          <h2 id="map-modal-title" className="map-h">
+            <ValorantIcon size={22} />
+            <span className="px">Roleta de mapas</span>
+          </h2>
+          <span className="tag tag-muted">Competitivo</span>
+        </div>
         <Wheel
           spin={spin}
           ids={ids}
@@ -28,18 +35,18 @@ export function MapModal() {
           settledId={room.map || undefined}
           emptyText={isError ? "Mapas indisponíveis" : "Carregando mapas..."}
         />
-        <div className="actions">
+        <div className="modal-actions">
           {perms.isAdmin ? (
             <>
               <button
-                className="primary"
+                className="btn btn-red px"
                 disabled={!!spin || maps.length === 0}
                 onClick={() => dispatch(wsSend({ type: "spin_map" }))}
               >
-                {spin ? "Girando..." : "Girar"}
+                {spin ? "Girando..." : room.map ? "Girar de novo" : "Girar"}
               </button>
               <button
-                className="secondary"
+                className="btn btn-ghost"
                 disabled={!!spin}
                 onClick={() => dispatch(wsSend({ type: "set_map_open", enabled: false }))}
               >

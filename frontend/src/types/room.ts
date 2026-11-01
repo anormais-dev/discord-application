@@ -11,6 +11,8 @@ export interface Participant {
   avatar: string;
   online: boolean;
   joinedAt: string;
+  // Prazo para voltar sem perder o lugar; só vem para quem caiu.
+  reconnectUntil?: string;
 }
 
 // Giro em andamento. Todos os clientes animam a partir destes dados.
@@ -38,6 +40,8 @@ export interface RoomState {
   mapSpin: SpinState | null;
   map: string;
   mapOpen: boolean;
+  // Quem cancelou a roleta por último; some quando ela volta a girar.
+  cancelled: { byId: string; byName: string; at: string } | null;
 }
 
 export type ClientMessage =
@@ -51,6 +55,7 @@ export type ClientMessage =
   | { type: "spin" }
   | { type: "spin_map" }
   | { type: "set_map_open"; enabled: boolean }
+  | { type: "cancel_draft" }
   | { type: "reset" };
 
 export type ServerMessage =

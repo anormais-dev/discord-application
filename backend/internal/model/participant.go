@@ -8,4 +8,6 @@ type Participant struct {
 	Avatar   string
 	Online   bool
 	JoinedAt time.Time
+	// ReconnectUntil é o prazo para voltar sem perder o lugar; zero enquanto online.
+	ReconnectUntil time.Time
 }

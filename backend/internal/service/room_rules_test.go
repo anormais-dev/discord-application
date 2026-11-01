@@ -6,6 +6,7 @@ import (
 	"slices"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/anormais-dev/discord-application/backend/internal/model"
 )
@@ -69,7 +70,7 @@ func TestAdminTransfersToOldestOnline(t *testing.T) {
 
 	// Em drafting, cair mantém o admin até a tolerância acabar; depois passa o admin, mas fica no time.
 	spinAndCommit(t, r, "u1")
-	disconnect(r, "u1")
+	disconnect(r, "u1", time.Time{})
 	if r.AdminID != "u1" {
 		t.Fatalf("admin = %q, esperado u1 durante a tolerância", r.AdminID)
 	}
@@ -77,7 +78,7 @@ func TestAdminTransfersToOldestOnline(t *testing.T) {
 	if r.AdminID != "u2" {
 		t.Fatalf("admin = %q, esperado u2", r.AdminID)
 	}
-	disconnect(r, "u2")
+	disconnect(r, "u2", time.Time{})
 	dropOffline(r, "u2")
 	if r.AdminID != "" || slices.ContainsFunc(r.Participants, func(p model.Participant) bool { return p.Online }) {
 		t.Fatalf("sem ninguém online não deveria haver admin")
@@ -90,7 +91,7 @@ func TestAdminTransfersToOldestOnline(t *testing.T) {
 
 func TestLobbyDisconnectRemovesParticipantAfterGrace(t *testing.T) {
 	r := newTestRoom(t, 2, model.Formats[0])
-	disconnect(r, "u1")
+	disconnect(r, "u1", time.Time{})
 	if len(r.Participants) != 2 || !r.Ready["u1"] {
 		t.Fatalf("durante a tolerância o participante deveria continuar na roda e pronto")
 	}
@@ -99,7 +100,7 @@ func TestLobbyDisconnectRemovesParticipantAfterGrace(t *testing.T) {
 	if len(r.Participants) != 2 {
 		t.Fatalf("quem voltou online não deveria sair da roda")
 	}
-	disconnect(r, "u1")
+	disconnect(r, "u1", time.Time{})
 	dropOffline(r, "u1")
 	if len(r.Participants) != 1 || len(r.Pool) != 1 {
 		t.Fatalf("participante deveria ter saído da roda")
@@ -266,7 +267,7 @@ func TestSpinNeedsEveryoneReady(t *testing.T) {
 func TestReadyRules(t *testing.T) {
 	r := newTestRoom(t, 3, model.Formats[0])
 	expectErr(t, setReady(r, "ninguem", true), ErrNotParticipant)
-	disconnect(r, "u2")
+	disconnect(r, "u2", time.Time{})
 	dropOffline(r, "u2")
 	if r.Ready["u2"] {
 		t.Fatalf("quem sai da sala não deveria continuar pronto")
@@ -369,5 +370,99 @@ func TestSetMapOpenOnlyAdminAndNotWhileSpinning(t *testing.T) {
 	commitMapSpin(r)
 	if err := setMapOpen(r, "u0", false); err != nil || r.MapOpen {
 		t.Fatalf("admin deveria fechar depois do giro: %v", err)
+	}
+}
+
+func TestDisconnectKeepsReconnectDeadlineUntilBack(t *testing.T) {
+	r := newTestRoom(t, 2, model.Formats[0])
+	until := time.Now().Add(30 * time.Second)
+	disconnect(r, "u1", until)
+	if p := r.Participants[1]; p.Online || !p.ReconnectUntil.Equal(until) {
+		t.Fatalf("quem cai deveria ficar offline com o prazo de volta, veio %+v", p)
+	}
+	connect(r, "u1")
+	if p := r.Participants[1]; !p.Online || !p.ReconnectUntil.IsZero() {
+		t.Fatalf("quem volta deveria ficar online sem prazo, veio %+v", p)
+	}
+}
+
+func TestCancelDraftReturnsEveryoneToLobby(t *testing.T) {
+	r := newTestRoom(t, 4, model.Format{Teams: 2, Size: 2})
+	expectErr(t, cancelDraft(r, "u0", time.Now()), ErrWrongPhase)
+	spinAndCommit(t, r, "u0")
+	if _, err := spin(r, testRand, "u0"); err != nil {
+		t.Fatal(err)
+	}
+
+	expectErr(t, cancelDraft(r, "u1", time.Now()), ErrCannotSpin)
+	if err := setSpinner(r, "u0", "u1", true); err != nil {
+		t.Fatal(err)
+	}
+	if err := cancelDraft(r, "u1", time.Now()); err != nil {
+		t.Fatal(err)
+	}
+
+	if r.Phase != model.PhaseLobby || r.CurrentSpin != nil || r.Picks != 0 || len(r.Teams) != 0 {
+		t.Fatalf("sorteio não foi desfeito: %+v", r)
+	}
+	if !slices.Equal(r.Pool, []string{"u0", "u1", "u2", "u3"}) {
+		t.Fatalf("roda deveria ter todo mundo de volta, veio %v", r.Pool)
+	}
+	if !allReady(r) || r.Format != (model.Format{Teams: 2, Size: 2}) {
+		t.Fatalf("prontos e formato deveriam continuar")
+	}
+	spinAndCommit(t, r, "u0")
+}
+
+func TestCancelDraftDropsWhoAlreadyMissedTheGrace(t *testing.T) {
+	r := newTestRoom(t, 3, model.Formats[0])
+	spinAndCommit(t, r, "u0")
+	now := time.Now()
+	disconnect(r, "u1", now.Add(-time.Second))
+	dropOffline(r, "u1")
+	disconnect(r, "u2", now.Add(time.Minute))
+
+	if err := cancelDraft(r, "u0", now); err != nil {
+		t.Fatal(err)
+	}
+	if indexOf(r, "u1") >= 0 {
+		t.Fatalf("quem já tinha perdido a tolerância deveria sair da sala")
+	}
+	if indexOf(r, "u2") < 0 || !slices.Contains(r.Pool, "u2") {
+		t.Fatalf("quem ainda pode voltar deveria continuar na roda")
+	}
+}
+
+func TestCancelDraftTellsWhoCancelledUntilNextDraft(t *testing.T) {
+	r := newTestRoom(t, 2, model.Formats[0])
+	if _, err := spin(r, testRand, "u0"); err != nil {
+		t.Fatal(err)
+	}
+	if err := cancelDraft(r, "u0", time.Now()); err != nil {
+		t.Fatal(err)
+	}
+	if r.Cancelled == nil || r.Cancelled.ByID != "u0" || r.Cancelled.ByName != "User 0" {
+		t.Fatalf("aviso deveria dizer quem cancelou, veio %+v", r.Cancelled)
+	}
+	if _, err := spin(r, testRand, "u0"); err != nil {
+		t.Fatal(err)
+	}
+	if r.Cancelled != nil {
+		t.Fatalf("aviso deveria sumir quando a roleta volta a girar")
+	}
+}
+
+func TestAutoSpinStartsOnAndComesBackOnAfterReset(t *testing.T) {
+	r := newTestRoom(t, 2, model.Formats[0])
+	if !r.AutoSpin {
+		t.Fatalf("sala nova deveria começar com o giro automático ligado")
+	}
+	setAutoSpin(r, "u0", false)
+	spinAndCommit(t, r, "u0")
+	if err := reset(r, "u0"); err != nil {
+		t.Fatal(err)
+	}
+	if !r.AutoSpin {
+		t.Fatalf("nova rodada deveria voltar com o giro automático ligado")
 	}
 }

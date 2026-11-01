@@ -46,9 +46,14 @@ func (u *User) DisplayName() string {
 	return u.Username
 }
 
+// AvatarURL usa .gif para avatar animado (hash começando com "a_"), senão a foto ficaria parada.
 func (u *User) AvatarURL() string {
 	if u.Avatar != "" {
-		return fmt.Sprintf("https://cdn.discordapp.com/avatars/%s/%s.png?size=128", u.ID, u.Avatar)
+		ext := "png"
+		if strings.HasPrefix(u.Avatar, "a_") {
+			ext = "gif"
+		}
+		return fmt.Sprintf("https://cdn.discordapp.com/avatars/%s/%s.%s?size=128", u.ID, u.Avatar, ext)
 	}
 	id, _ := strconv.ParseUint(u.ID, 10, 64)
 	return fmt.Sprintf("https://cdn.discordapp.com/embed/avatars/%d.png", (id>>22)%6)

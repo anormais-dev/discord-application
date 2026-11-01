@@ -122,6 +122,7 @@ func spin(r *model.Room, rng *rand.Rand, userID string) (*model.Spin, error) {
 		}
 		r.Picks = 0
 		r.Phase = model.PhaseDrafting
+		r.Cancelled = nil
 	case model.PhaseDrafting:
 	default:
 		return nil, ErrWrongPhase
@@ -220,6 +221,32 @@ func assign(r *model.Room, userID string) {
 	}
 }
 
+// cancelDraft desfaz o sorteio e volta todo mundo para a sala, mantendo formato e prontos.
+// Quem caiu e já passou da tolerância durante o sorteio sai agora, como sairia na sala.
+func cancelDraft(r *model.Room, userID string, now time.Time) error {
+	if !canSpin(r, userID) {
+		return ErrCannotSpin
+	}
+	if r.Phase != model.PhaseDrafting {
+		return ErrWrongPhase
+	}
+	r.Cancelled = &model.Cancellation{ByID: userID, ByName: r.Participants[indexOf(r, userID)].Name, At: now}
+	r.CurrentSpin = nil
+	r.Teams = nil
+	r.Picks = 0
+	r.Phase = model.PhaseLobby
+	r.Pool = make([]string, 0, len(r.Participants))
+	for _, p := range r.Participants {
+		r.Pool = append(r.Pool, p.ID)
+	}
+	for _, p := range slices.Clone(r.Participants) {
+		if !p.Online && !p.ReconnectUntil.After(now) {
+			remove(r, p.ID)
+		}
+	}
+	return nil
+}
+
 // reset limpa inclusive os participantes; o próximo a entrar vira admin.
 func reset(r *model.Room, userID string) error {
 	if userID != r.AdminID {
@@ -238,19 +265,22 @@ func connect(r *model.Room, userID string) {
 		return
 	}
 	r.Participants[i].Online = true
+	r.Participants[i].ReconnectUntil = time.Time{}
 	if r.AdminID == "" {
 		r.AdminID = userID
 	}
 }
 
 // disconnect só marca offline: uma queda rápida (alt-tab, rede) não pode tirar a
-// pessoa da roda. A saída de verdade vem em dropOffline, depois da tolerância.
-func disconnect(r *model.Room, userID string) {
+// pessoa da roda. A saída de verdade vem em dropOffline, depois da tolerância;
+// until é esse prazo, mostrado para a sala como contagem regressiva.
+func disconnect(r *model.Room, userID string, until time.Time) {
 	i := indexOf(r, userID)
 	if i < 0 {
 		return
 	}
 	r.Participants[i].Online = false
+	r.Participants[i].ReconnectUntil = until
 }
 
 // dropOffline tira da roda quem não voltou antes do primeiro giro; depois disso a
