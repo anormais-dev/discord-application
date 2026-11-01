@@ -31,9 +31,11 @@ func NewRoom() *Room {
 		Participants: []Participant{},
 		Spinners:     map[string]bool{},
 		Ready:        map[string]bool{},
-		Format:       DefaultFormat,
-		Pool:         []string{},
-		Teams:        [][]Participant{},
-		Phase:        PhaseLobby,
+		// O giro automático já vem ligado; o admin desliga se quiser girar um a um.
+		AutoSpin: true,
+		Format:   DefaultFormat,
+		Pool:     []string{},
+		Teams:    [][]Participant{},
+		Phase:    PhaseLobby,
 	}
 }

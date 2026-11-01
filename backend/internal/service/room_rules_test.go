@@ -451,3 +451,18 @@ func TestCancelDraftTellsWhoCancelledUntilNextDraft(t *testing.T) {
 		t.Fatalf("aviso deveria sumir quando a roleta volta a girar")
 	}
 }
+
+func TestAutoSpinStartsOnAndComesBackOnAfterReset(t *testing.T) {
+	r := newTestRoom(t, 2, model.Formats[0])
+	if !r.AutoSpin {
+		t.Fatalf("sala nova deveria começar com o giro automático ligado")
+	}
+	setAutoSpin(r, "u0", false)
+	spinAndCommit(t, r, "u0")
+	if err := reset(r, "u0"); err != nil {
+		t.Fatal(err)
+	}
+	if !r.AutoSpin {
+		t.Fatalf("nova rodada deveria voltar com o giro automático ligado")
+	}
+}
