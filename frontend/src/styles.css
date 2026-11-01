@@ -31,6 +31,14 @@ body {
   background-size: 32px 32px;
 }
 
+/* Imagens (mapas, macaco, avatares) não podem ser selecionadas nem arrastadas. */
+img {
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-user-drag: none;
+  pointer-events: none;
+}
+
 button {
   font: inherit;
   border: 0;
@@ -1431,14 +1439,6 @@ h3 {
   color: #fff;
 }
 
-.modal .wheel {
-  width: 100%;
-}
-
-.modal .wheel-stage {
-  width: min(400px, 100%, 56vh);
-}
-
 .modal-actions {
   display: flex;
   justify-content: center;
@@ -1564,5 +1564,140 @@ h3 {
 
   .private-t {
     font-size: 26px;
+  }
+}
+
+/* Roleta de mapas: carrossel de faixas que para no mapa sorteado. */
+.modal.map-modal {
+  width: min(900px, 100%);
+}
+
+.map-carousel {
+  --map-card-width: min(240px, calc(100vw - 80px));
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  padding: 14px 0;
+  background: var(--dark);
+  border: 2px solid var(--line);
+}
+
+.map-track {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+  width: max-content;
+  padding: 0 calc((100% - var(--map-card-width)) / 2);
+}
+
+.map-track.is-rolling {
+  transition-property: transform;
+  transition-timing-function: cubic-bezier(0.08, 0.72, 0.12, 1);
+}
+
+.map-card {
+  display: flex;
+  user-select: none;
+  -webkit-user-select: none;
+  flex: 0 0 var(--map-card-width, 240px);
+  flex-direction: column;
+  box-sizing: border-box;
+  width: var(--map-card-width, 240px);
+  overflow: hidden;
+  background: var(--panel-2);
+  border: 2px solid var(--line);
+  text-align: center;
+}
+
+/* As faixas da Valorant API são largas e baixas (456x100). */
+.map-card-image {
+  aspect-ratio: 456 / 100;
+  overflow: hidden;
+  background: var(--panel);
+}
+
+.map-card-image img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.map-card > strong {
+  padding: 8px;
+  font-family: var(--font-pixel);
+  font-weight: 400;
+  font-size: 16px;
+  text-transform: uppercase;
+}
+
+/* Ponteiro amarelo no meio, como o da roda. */
+.map-selection-line {
+  position: absolute;
+  z-index: 1;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 4px;
+  transform: translateX(-50%);
+  background: var(--yellow);
+  box-shadow: 2px 0 0 var(--yellow-shadow);
+  pointer-events: none;
+}
+
+.map-status {
+  min-height: 1.4em;
+  margin: 0;
+  font-family: var(--font-pixel);
+  font-size: 18px;
+  color: var(--yellow);
+  text-align: center;
+}
+
+.map-card-featured {
+  --map-card-width: min(560px, 100%);
+  flex: 0 1 auto;
+  border-color: var(--yellow);
+  box-shadow: 4px 4px 0 var(--yellow-shadow);
+}
+
+.map-card-featured .map-card-image {
+  aspect-ratio: 16 / 9;
+}
+
+.map-card-featured > strong {
+  padding: 10px;
+  font-size: 26px;
+  color: var(--yellow);
+}
+
+/* Confete caindo sobre o mapa escolhido; para depois de algumas voltas. */
+.map-card-featured {
+  position: relative;
+}
+
+.generated-confetti.map-confetti {
+  inset: 0;
+}
+
+.map-confetti .generated-confetti-piece {
+  width: 8px;
+  height: 12px;
+  border-radius: 0;
+  animation-name: map-confetti-fall;
+  animation-iteration-count: 3;
+}
+
+@keyframes map-confetti-fall {
+  0% {
+    transform: translateY(-16px) rotate(0);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(380px) rotate(720deg);
+    opacity: 0;
   }
 }

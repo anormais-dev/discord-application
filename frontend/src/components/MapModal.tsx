@@ -1,50 +1,223 @@
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useGetMapsQuery } from "../services/api";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { wsSend } from "../store/roomSlice";
 import { selectPermissions, selectRoom } from "../store/selectors";
+import type { SpinState } from "../types/room";
+import { apiBase } from "../utils/runtime";
+import { playTick, playVictory } from "../utils/sound";
+import { Confetti } from "./Confetti";
 import { ValorantIcon } from "./Icons";
-import { Wheel } from "./Wheel";
+
+function preload(path?: string) {
+  if (path) new Image().src = apiBase + path;
+}
+
+// Sem imagem (API sem arte ou fora do ar) o card fica s\u00f3 com o nome.
+function MapCard({ map, image, featured = false }: { map: string; image?: string; featured?: boolean }) {
+  const [imageMissing, setImageMissing] = useState(false);
+
+  return (
+    <article className={`map-card${featured ? " map-card-featured" : ""}`}>
+      <div className="map-card-image">
+        {image && !imageMissing && <img src={apiBase + image} alt="" onError={() => setImageMissing(true)} />}
+      </div>
+      {featured && <Confetti pieces={40} className="map-confetti" />}
+      <strong>{map}</strong>
+    </article>
+  );
+}
+
+function makeCarouselItems(spin: SpinState, maps: string[]) {
+  const uniqueMaps = [...new Set(maps)];
+  if (!uniqueMaps.includes(spin.winnerId)) uniqueMaps.push(spin.winnerId);
+  if (uniqueMaps.length === 1) return { items: uniqueMaps, targetIndex: 0 };
+
+  const targetCycle = spin.rotations;
+  const trailingCycles = 2;
+  const itemCount = (targetCycle + trailingCycles + 1) * uniqueMaps.length;
+  const offset = Math.max(0, Math.min(0.999999, spin.targetOffset));
+  const targetIndex = targetCycle * uniqueMaps.length + Math.floor(offset * uniqueMaps.length);
+  const winnerIndex = uniqueMaps.indexOf(spin.winnerId);
+  const startIndex = (winnerIndex - (targetIndex % uniqueMaps.length) + uniqueMaps.length) % uniqueMaps.length;
+  const items = Array.from(
+    { length: itemCount },
+    (_, index) => uniqueMaps[(index + startIndex) % uniqueMaps.length],
+  );
+
+  return { items, targetIndex };
+}
 
 export function MapModal() {
   const dispatch = useAppDispatch();
   const room = useAppSelector(selectRoom);
   const perms = useAppSelector(selectPermissions);
-  const { data: maps = [], isError } = useGetMapsQuery();
+  const { data, isError } = useGetMapsQuery();
+  const maps = useMemo(() => data?.maps ?? [], [data]);
+  const images = data?.images ?? {};
+  const viewportRef = useRef<HTMLDivElement>(null);
+  const activeSpinRef = useRef<string | null>(null);
+  const [offset, setOffset] = useState(0);
+  const [isRolling, setIsRolling] = useState(false);
+  const [animationDuration, setAnimationDuration] = useState(0);
+  const [revealedMap, setRevealedMap] = useState<string | null>(null);
+
+  const spin = room?.mapSpin ?? null;
+  const ids = spin ? spin.poolSnapshot : maps;
+  const carousel = useMemo(
+    () => (spin ? makeCarouselItems(spin, ids) : { items: ids, targetIndex: Math.floor(ids.length / 2) }),
+    [spin?.startedAt, ids],
+  );
+  const carouselItems = carousel.items;
+  const spinKey = spin?.startedAt;
+
+  // Adianta o download: as faixas assim que a lista chega (o modal abre já com as fotos) e o
+  // splash do sorteado quando o giro começa, que só aparece uns 5s depois.
+  useEffect(() => {
+    for (const img of Object.values(images)) preload(img.card);
+  }, [data]);
+  useEffect(() => {
+    if (spin) preload(images[spin.winnerId]?.splash);
+  }, [spinKey, data]);
+
+  useEffect(() => {
+    if (!room?.mapOpen) {
+      activeSpinRef.current = null;
+      setRevealedMap(null);
+      return;
+    }
+    if (spin) {
+      activeSpinRef.current = spin.startedAt;
+      setRevealedMap(null);
+      return;
+    }
+    if (activeSpinRef.current) {
+      setRevealedMap(room.map || null);
+      activeSpinRef.current = null;
+    }
+  }, [room?.mapOpen, room?.map, spinKey]);
+
+  useLayoutEffect(() => {
+    const viewport = viewportRef.current;
+    const track = viewport?.querySelector<HTMLElement>(".map-track");
+    const cards = track?.querySelectorAll<HTMLElement>(".map-card");
+    if (!viewport || !cards?.length) return;
+
+    const alignOffset = (card: HTMLElement, cardPosition = 0.5) =>
+      viewport.clientWidth / 2 - (card.offsetLeft + card.offsetWidth * cardPosition);
+
+    setIsRolling(false);
+    if (!spin) {
+      setAnimationDuration(0);
+      setOffset(alignOffset(cards[carousel.targetIndex]));
+      return;
+    }
+
+    const targetPosition = Math.max(0.15, Math.min(0.85, spin.targetOffset));
+    const elapsed = Math.max(0, Date.now() - new Date(spin.startedAt).getTime());
+    const duration = Math.max(0, spin.durationMs - elapsed - 32);
+    setAnimationDuration(duration);
+    setOffset(alignOffset(cards[0]));
+    let secondFrame = 0;
+    const frame = requestAnimationFrame(() => {
+      secondFrame = requestAnimationFrame(() => {
+        setIsRolling(true);
+        setOffset(alignOffset(cards[carousel.targetIndex], targetPosition));
+      });
+    });
+    return () => {
+      cancelAnimationFrame(frame);
+      cancelAnimationFrame(secondFrame);
+    };
+  }, [spinKey, carouselItems.length, carousel.targetIndex, !!spin, room?.mapOpen]);
+
+  // Tick a cada card que passa pelo ponteiro e a música de vitória quando para.
+  // A posição vem da transição CSS em andamento.
+  useEffect(() => {
+    const viewport = viewportRef.current;
+    const track = viewport?.querySelector<HTMLElement>(".map-track");
+    if (!isRolling || !viewport || !track) return;
+    const cards = [...track.querySelectorAll<HTMLElement>(".map-card")];
+    let underPointer = -1;
+    let frame = 0;
+    const step = () => {
+      const pointer = viewport.clientWidth / 2 - new DOMMatrixReadOnly(getComputedStyle(track).transform).m41;
+      let i = 0;
+      while (i + 1 < cards.length && cards[i + 1].offsetLeft <= pointer) i++;
+      if (underPointer !== -1 && i !== underPointer) playTick();
+      underPointer = i;
+      frame = requestAnimationFrame(step);
+    };
+    frame = requestAnimationFrame(step);
+    const stop = setTimeout(() => {
+      cancelAnimationFrame(frame);
+      playVictory();
+    }, animationDuration + 100);
+    return () => {
+      cancelAnimationFrame(frame);
+      clearTimeout(stop);
+    };
+  }, [isRolling, animationDuration]);
+
   if (!room?.mapOpen) return null;
 
-  const spin = room.mapSpin;
-  const ids = spin ? spin.poolSnapshot : maps;
+  const hasResult = !spin && !!revealedMap;
 
   return (
     <div className="modal-backdrop">
-      <section className="panel modal" role="dialog" aria-modal="true" aria-labelledby="map-modal-title">
+      <section className="panel modal map-modal" role="dialog" aria-modal="true" aria-labelledby="map-modal-title">
         <div className="panel-h">
           <h2 id="map-modal-title" className="map-h">
             <ValorantIcon size={22} />
-            <span className="px">Roleta de mapas</span>
+            <span className="px">Sorteio do mapa</span>
           </h2>
           <span className="tag tag-muted">Competitivo</span>
         </div>
-        <Wheel
-          spin={spin}
-          ids={ids}
-          label={(id) => id}
-          empty={ids.length === 0}
-          celebrate={!!room.map || !!spin}
-          resultPrefix="Mapa: "
-          settledId={room.map || undefined}
-          emptyText={isError ? "Mapas indisponíveis" : "Carregando mapas..."}
-        />
+        {hasResult ? (
+          <>
+            <MapCard map={revealedMap} image={images[revealedMap]?.splash} featured />
+            <p className="map-status" aria-live="polite">Mapa escolhido</p>
+          </>
+        ) : ids.length > 0 ? (
+          <>
+            <div className={`map-carousel${spin ? " is-spinning" : " is-idle"}`} ref={viewportRef}>
+              <div
+                className={`map-track${isRolling ? " is-rolling" : ""}`}
+                style={{
+                  transform: `translateX(${offset}px)`,
+                  transitionDuration: `${animationDuration}ms`,
+                }}
+              >
+                {carouselItems.map((map, index) => (
+                  <MapCard key={`${map}-${index}`} map={map} image={images[map]?.card} />
+                ))}
+              </div>
+              <span className="map-selection-line" aria-hidden="true" />
+            </div>
+            <p className="map-status" aria-live="polite">
+              {spin ? "Sorteando mapa..." : "Pronto para sortear"}
+            </p>
+          </>
+        ) : (
+          <p className="map-status muted">{isError ? "Mapas indisponíveis" : "Carregando mapas..."}</p>
+        )}
         <div className="modal-actions">
           {perms.isAdmin ? (
             <>
-              <button
-                className="btn btn-red px"
-                disabled={!!spin || maps.length === 0}
-                onClick={() => dispatch(wsSend({ type: "spin_map" }))}
-              >
-                {spin ? "Girando..." : room.map ? "Girar de novo" : "Girar"}
-              </button>
+              {!hasResult && (
+                <button
+                  className="btn btn-red px"
+                  disabled={!!spin || maps.length === 0}
+                  onClick={() => dispatch(wsSend({ type: "spin_map" }))}
+                >
+                  {spin ? "Sorteando..." : "Sortear mapa"}
+                </button>
+              )}
+              {hasResult && (
+                <button className="btn btn-red px" onClick={() => dispatch(wsSend({ type: "spin_map" }))}>
+                  Girar de novo
+                </button>
+              )}
               <button
                 className="btn btn-ghost"
                 disabled={!!spin}
@@ -54,7 +227,7 @@ export function MapModal() {
               </button>
             </>
           ) : (
-            <p className="muted">Só o admin gira o mapa</p>
+            <p className="muted">Só o admin pode sortear ou fechar</p>
           )}
         </div>
       </section>

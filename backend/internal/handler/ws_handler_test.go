@@ -47,6 +47,10 @@ func (fakeValorant) Maps(context.Context) ([]valorant.Map, error) {
 	return []valorant.Map{{DisplayName: "Ascent", TacticalDescription: "A/B Sites"}, {DisplayName: "Bind", TacticalDescription: "A/B Sites"}}, nil
 }
 
+func (fakeValorant) Image(context.Context, string) ([]byte, string, error) {
+	return nil, "", nil
+}
+
 func newTestMaps() *service.MapService {
 	return service.NewMapService(fakeValorant{})
 }

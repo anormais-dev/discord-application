@@ -124,3 +124,25 @@ export function playSadTrombone() {
   ];
   for (const [f, at, d, slide] of notes) note(ac, f, t + at, d, { type: "sawtooth", volume: 0.05, slideTo: slide });
 }
+
+// Música de vitória do mapa escolhido: estouro de confete, arpejo subindo e um acorde final
+// segurado, com baixo em triângulo. Mais longa que a fanfarra dos times.
+export function playVictory() {
+  const ac = audio();
+  if (!ac) return;
+  const t = ac.currentTime;
+  pop(ac, t, 0.14);
+  const melody: [number, number, number][] = [
+    [392, 0.05, 0.1],
+    [523, 0.15, 0.1],
+    [659, 0.25, 0.1],
+    [784, 0.35, 0.18],
+    [659, 0.55, 0.1],
+    [784, 0.65, 0.1],
+    [1047, 0.75, 0.6],
+  ];
+  for (const [f, at, d] of melody) note(ac, f, t + at, d, { volume: 0.07 });
+  [131, 196, 262].forEach((f, i) => note(ac, f, t + 0.05 + i * 0.35, i === 2 ? 0.75 : 0.3, { type: "triangle", volume: 0.08 }));
+  [659, 784].forEach((f) => note(ac, f, t + 0.75, 0.6, { volume: 0.04 }));
+  pop(ac, t + 0.75, 0.1);
+}

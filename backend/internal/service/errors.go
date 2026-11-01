@@ -14,4 +14,5 @@ var (
 	ErrNoSpinInProgress = errors.New("nenhum giro em andamento")
 	ErrNotAllReady      = errors.New("todos precisam estar prontos")
 	ErrMapsUnavailable  = errors.New("não foi possível buscar os mapas do Valorant")
+	ErrMapImageNotFound = errors.New("imagem de mapa não encontrada")
 )
