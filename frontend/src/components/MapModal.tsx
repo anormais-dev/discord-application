@@ -5,6 +5,7 @@ import { wsSend } from "../store/roomSlice";
 import { selectPermissions, selectRoom } from "../store/selectors";
 import type { SpinState } from "../types/room";
 import { mediaUrl } from "../utils/runtime";
+import { ValorantIcon } from "./Icons";
 
 // Sem imagem (API sem arte ou fora do ar) o card fica s\u00f3 com o nome.
 function MapCard({ map, image, featured = false }: { map: string; image?: string; featured?: boolean }) {
@@ -121,7 +122,13 @@ export function MapModal() {
   return (
     <div className="modal-backdrop">
       <section className="panel modal map-modal" role="dialog" aria-modal="true" aria-labelledby="map-modal-title">
-        <h2 id="map-modal-title">Sorteio do mapa</h2>
+        <div className="panel-h">
+          <h2 id="map-modal-title" className="map-h">
+            <ValorantIcon size={22} />
+            <span className="px">Sorteio do mapa</span>
+          </h2>
+          <span className="tag tag-muted">Competitivo</span>
+        </div>
         {hasResult ? (
           <>
             <MapCard map={revealedMap} image={images[revealedMap]?.splash} featured />
@@ -150,30 +157,30 @@ export function MapModal() {
         ) : (
           <p className="map-status muted">{isError ? "Mapas indisponíveis" : "Carregando mapas..."}</p>
         )}
-        <div className="actions">
+        <div className="modal-actions">
           {perms.isAdmin ? (
             <>
               {!hasResult && (
                 <button
-                  className="primary"
+                  className="btn btn-red px"
                   disabled={!!spin || maps.length === 0}
                   onClick={() => dispatch(wsSend({ type: "spin_map" }))}
                 >
                   {spin ? "Sorteando..." : "Sortear mapa"}
                 </button>
               )}
+              {hasResult && (
+                <button className="btn btn-red px" onClick={() => dispatch(wsSend({ type: "spin_map" }))}>
+                  Girar de novo
+                </button>
+              )}
               <button
-                className="secondary"
+                className="btn btn-ghost"
                 disabled={!!spin}
                 onClick={() => dispatch(wsSend({ type: "set_map_open", enabled: false }))}
               >
                 Fechar
               </button>
-              {hasResult && (
-                <button className="primary" onClick={() => dispatch(wsSend({ type: "spin_map" }))}>
-                  Girar de novo
-                </button>
-              )}
             </>
           ) : (
             <p className="muted">Só o admin pode sortear ou fechar</p>
