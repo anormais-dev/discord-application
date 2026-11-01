@@ -5,7 +5,7 @@ import { wsSend } from "../store/roomSlice";
 import { selectPermissions, selectRoom } from "../store/selectors";
 import type { SpinState } from "../types/room";
 import { apiBase } from "../utils/runtime";
-import { playTick } from "../utils/sound";
+import { playConfetti, playTick } from "../utils/sound";
 import { ValorantIcon } from "./Icons";
 
 // Sem imagem (API sem arte ou fora do ar) o card fica s\u00f3 com o nome.
@@ -116,7 +116,8 @@ export function MapModal() {
     };
   }, [spinKey, carouselItems.length, carousel.targetIndex, !!spin, room?.mapOpen]);
 
-  // Tick a cada card que passa pelo ponteiro, como na roda. A posição vem da transição CSS em andamento.
+  // Tick a cada card que passa pelo ponteiro e o som de confete quando para, como na roda.
+  // A posição vem da transição CSS em andamento.
   useEffect(() => {
     const viewport = viewportRef.current;
     const track = viewport?.querySelector<HTMLElement>(".map-track");
@@ -133,7 +134,10 @@ export function MapModal() {
       frame = requestAnimationFrame(step);
     };
     frame = requestAnimationFrame(step);
-    const stop = setTimeout(() => cancelAnimationFrame(frame), animationDuration + 100);
+    const stop = setTimeout(() => {
+      cancelAnimationFrame(frame);
+      playConfetti();
+    }, animationDuration + 100);
     return () => {
       cancelAnimationFrame(frame);
       clearTimeout(stop);
