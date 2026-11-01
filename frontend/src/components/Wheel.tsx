@@ -2,15 +2,10 @@ import { useEffect, useRef, useState } from "react";
 import type { SpinState } from "../types/room";
 import { playConfetti, playTick } from "../utils/sound";
 import { POINTER_ANGLE, TAU, WHEEL_FONT, drawWheel, easeOutQuart } from "../utils/wheel";
+import { Confetti } from "./Confetti";
 
 const SPIRAL_START = 0.15;
 const SPIRAL_TURNS = 4;
-const CONFETTI_PIECES = Array.from({ length: 24 }, (_, index) => ({
-  left: `${(index * 37) % 101}%`,
-  delay: `-${(index % 8) * 0.13}s`,
-  duration: `${1.2 + (index % 5) * 0.12}s`,
-  color: index % 5,
-}));
 
 interface Animation {
   key: string;
@@ -178,17 +173,7 @@ export function Wheel({ spin, ids, label, empty, celebrate, resultPrefix, settle
             <img className="celebration-confetti" src="/images/confetti.png" alt="" />
           </div>
         </div>
-        {celebrationActive && (
-          <div className="generated-confetti" aria-hidden="true">
-            {CONFETTI_PIECES.map((piece, index) => (
-              <span
-                key={index}
-                className={`generated-confetti-piece confetti-color-${piece.color}`}
-                style={{ left: piece.left, animationDelay: piece.delay, animationDuration: piece.duration }}
-              />
-            ))}
-          </div>
-        )}
+        {celebrationActive && <Confetti />}
       </div>
       <p className="wheel-result" aria-live="polite">
         {resultId ? `${resultPrefix}${label(resultId)}` : spin ? "Girando..." : " "}

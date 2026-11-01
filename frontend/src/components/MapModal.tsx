@@ -5,7 +5,8 @@ import { wsSend } from "../store/roomSlice";
 import { selectPermissions, selectRoom } from "../store/selectors";
 import type { SpinState } from "../types/room";
 import { apiBase } from "../utils/runtime";
-import { playConfetti, playTick } from "../utils/sound";
+import { playTick, playVictory } from "../utils/sound";
+import { Confetti } from "./Confetti";
 import { ValorantIcon } from "./Icons";
 
 // Sem imagem (API sem arte ou fora do ar) o card fica s\u00f3 com o nome.
@@ -17,6 +18,7 @@ function MapCard({ map, image, featured = false }: { map: string; image?: string
       <div className="map-card-image">
         {image && !imageMissing && <img src={apiBase + image} alt="" onError={() => setImageMissing(true)} />}
       </div>
+      {featured && <Confetti pieces={40} className="map-confetti" />}
       <strong>{map}</strong>
     </article>
   );
@@ -116,7 +118,7 @@ export function MapModal() {
     };
   }, [spinKey, carouselItems.length, carousel.targetIndex, !!spin, room?.mapOpen]);
 
-  // Tick a cada card que passa pelo ponteiro e o som de confete quando para, como na roda.
+  // Tick a cada card que passa pelo ponteiro e a música de vitória quando para.
   // A posição vem da transição CSS em andamento.
   useEffect(() => {
     const viewport = viewportRef.current;
@@ -136,7 +138,7 @@ export function MapModal() {
     frame = requestAnimationFrame(step);
     const stop = setTimeout(() => {
       cancelAnimationFrame(frame);
-      playConfetti();
+      playVictory();
     }, animationDuration + 100);
     return () => {
       cancelAnimationFrame(frame);

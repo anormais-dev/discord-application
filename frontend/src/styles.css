@@ -1660,3 +1660,34 @@ h3 {
   font-size: 26px;
   color: var(--yellow);
 }
+
+/* Confete caindo sobre o mapa escolhido; para depois de algumas voltas. */
+.map-card-featured {
+  position: relative;
+}
+
+.generated-confetti.map-confetti {
+  inset: 0;
+}
+
+.map-confetti .generated-confetti-piece {
+  width: 8px;
+  height: 12px;
+  border-radius: 0;
+  animation-name: map-confetti-fall;
+  animation-iteration-count: 3;
+}
+
+@keyframes map-confetti-fall {
+  0% {
+    transform: translateY(-16px) rotate(0);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(380px) rotate(720deg);
+    opacity: 0;
+  }
+}
