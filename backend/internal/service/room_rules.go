@@ -11,6 +11,9 @@ import (
 // SpinDuration é quanto tempo a animação da roda dura nos clientes.
 const SpinDuration = 5 * time.Second
 
+// MinPlayers é o mínimo para girar: com uma pessoa só não há o que sortear, mesmo no 1x1.
+const MinPlayers = 2
+
 func join(r *model.Room, p model.Participant) error {
 	if r.Phase != model.PhaseLobby {
 		return ErrWrongPhase
@@ -112,6 +115,9 @@ func spin(r *model.Room, rng *rand.Rand, userID string) (*model.Spin, error) {
 	case model.PhaseLobby:
 		if len(r.Participants) < r.Format.Slots() {
 			return nil, ErrNotEnoughPlayers
+		}
+		if len(r.Participants) < MinPlayers {
+			return nil, ErrTooFewToDraw
 		}
 		if !allReady(r) {
 			return nil, ErrNotAllReady

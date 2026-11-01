@@ -466,3 +466,18 @@ func TestAutoSpinStartsOnAndComesBackOnAfterReset(t *testing.T) {
 		t.Fatalf("nova rodada deveria voltar com o giro automático ligado")
 	}
 }
+
+func TestSpinNeedsAtLeastTwoPlayersEvenInOneByOne(t *testing.T) {
+	r := newTestRoom(t, 1, model.Format{Teams: 1, Size: 1})
+	_, err := spin(r, testRand, "u0")
+	expectErr(t, err, ErrTooFewToDraw)
+	if r.Phase != model.PhaseLobby {
+		t.Fatalf("sala deveria continuar na fase de sala, está em %s", r.Phase)
+	}
+
+	if err := join(r, model.Participant{ID: "u1"}); err != nil {
+		t.Fatal(err)
+	}
+	setReady(r, "u1", true)
+	spinAndCommit(t, r, "u0")
+}

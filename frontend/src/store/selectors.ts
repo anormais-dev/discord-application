@@ -2,6 +2,9 @@ import { createSelector } from "@reduxjs/toolkit";
 import { formatSlots } from "../utils/format";
 import type { RootState } from ".";
 
+// Mínimo para girar, igual ao backend (MinPlayers).
+export const MIN_PLAYERS = 2;
+
 export const selectStatus = (s: RootState) => s.room.status;
 export const selectRoom = (s: RootState) => s.room.room;
 export const selectMe = (s: RootState) => s.room.me;
@@ -27,7 +30,8 @@ export const selectPermissions = createSelector([selectRoom, selectMe], (room, m
     canJoin: !!room && !isParticipant && room.phase === "lobby",
     canLeave: isParticipant && room?.phase !== "drafting",
     slots,
-    enoughPlayers: !!room && room.participants.length >= slots,
+    // Com uma pessoa só não há o que sortear, mesmo no 1x1: precisa de pelo menos MIN_PLAYERS.
+    enoughPlayers: !!room && room.participants.length >= Math.max(slots, MIN_PLAYERS),
     isReady: !!room && !!me && !!room.ready[me],
     notReady,
     allReady: !!room && notReady === 0,

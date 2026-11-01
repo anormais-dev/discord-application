@@ -10,6 +10,7 @@ var (
 	ErrNotParticipant   = errors.New("você não está participando")
 	ErrSpinInProgress   = errors.New("a roleta já está girando")
 	ErrNotEnoughPlayers = errors.New("participantes insuficientes para o formato")
+	ErrTooFewToDraw     = errors.New("a roleta precisa de pelo menos 2 jogadores")
 	ErrInvalidFormat    = errors.New("formato inválido")
 	ErrNoSpinInProgress = errors.New("nenhum giro em andamento")
 	ErrNotAllReady      = errors.New("todos precisam estar prontos")

@@ -1,6 +1,6 @@
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { wsSend } from "../store/roomSlice";
-import { selectFormats, selectPermissions, selectRoom } from "../store/selectors";
+import { MIN_PLAYERS, selectFormats, selectPermissions, selectRoom } from "../store/selectors";
 import type { Format } from "../types/room";
 import { plural, shortFormat } from "../utils/format";
 
@@ -108,6 +108,10 @@ export function LobbyControls() {
           <>
             {missing === 1 ? "Falta" : "Faltam"} <b>{plural(missing, "jogador", "jogadores")}</b> para o {shortFormat(room.format)} ·{" "}
             {room.participants.length}/{perms.slots} vagas
+          </>
+        ) : room.participants.length < MIN_PLAYERS ? (
+          <>
+            Falta <b>1 jogador</b>: com uma pessoa só não há o que sortear
           </>
         ) : perms.notReady > 0 ? (
           <>
