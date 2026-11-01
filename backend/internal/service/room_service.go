@@ -165,6 +165,10 @@ func (s *RoomService) SpinMap(instance, userID string, maps []string) error {
 	})
 }
 
+func (s *RoomService) CancelDraft(instance, userID string) error {
+	return s.update(instance, func(r *model.Room) error { return cancelDraft(r, userID, time.Now()) })
+}
+
 func (s *RoomService) Reset(instance, userID string) error {
 	return s.update(instance, func(r *model.Room) error { return reset(r, userID) })
 }
@@ -184,11 +188,12 @@ func (s *RoomService) update(instance string, fn func(*model.Room) error) error 
 	return nil
 }
 
-func (s *RoomService) commit(instance string, room *model.Room) {
+// commit confere o giro: um sorteio cancelado e girado de novo não pode ser fechado pelo timer antigo.
+func (s *RoomService) commit(instance string, room *model.Room, spin *model.Spin) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if current, err := s.repo.Get(instance); err != nil || current != room {
+	if current, err := s.repo.Get(instance); err != nil || current != room || room.CurrentSpin != spin {
 		return
 	}
 	if err := commitSpin(room); err != nil {
@@ -213,7 +218,8 @@ func (s *RoomService) commitMap(instance string, room *model.Room, spin *model.S
 }
 
 func (s *RoomService) scheduleCommit(instance string, room *model.Room) {
-	time.AfterFunc(s.CommitDelay, func() { s.commit(instance, room) })
+	spin := room.CurrentSpin
+	time.AfterFunc(s.CommitDelay, func() { s.commit(instance, room, spin) })
 }
 
 func (s *RoomService) scheduleAutoSpin(instance string, room *model.Room) {

@@ -1062,6 +1062,30 @@ h3 {
   gap: 16px;
 }
 
+/* Cancelar o sorteio: botão discreto que vira uma confirmação no mesmo lugar. */
+.cancel-draft,
+.cancel-confirm .btn {
+  padding: 6px 12px;
+  font-size: 13px;
+}
+
+.cancel-confirm .btn.px {
+  font-size: 14px;
+  box-shadow: 3px 3px 0 var(--red-shadow);
+}
+
+.cancel-confirm {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 6px 6px 12px;
+  background: var(--panel-2);
+  border: 2px solid var(--red);
+  color: var(--text);
+  font-weight: 700;
+  font-size: 15px;
+}
+
 @media (max-width: 900px) {
   .draft {
     grid-template-columns: 1fr 1fr;

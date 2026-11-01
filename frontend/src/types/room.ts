@@ -53,6 +53,7 @@ export type ClientMessage =
   | { type: "spin" }
   | { type: "spin_map" }
   | { type: "set_map_open"; enabled: boolean }
+  | { type: "cancel_draft" }
   | { type: "reset" };
 
 export type ServerMessage =

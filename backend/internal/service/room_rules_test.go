@@ -385,3 +385,50 @@ func TestDisconnectKeepsReconnectDeadlineUntilBack(t *testing.T) {
 		t.Fatalf("quem volta deveria ficar online sem prazo, veio %+v", p)
 	}
 }
+
+func TestCancelDraftReturnsEveryoneToLobby(t *testing.T) {
+	r := newTestRoom(t, 4, model.Format{Teams: 2, Size: 2})
+	expectErr(t, cancelDraft(r, "u0", time.Now()), ErrWrongPhase)
+	spinAndCommit(t, r, "u0")
+	if _, err := spin(r, testRand, "u0"); err != nil {
+		t.Fatal(err)
+	}
+
+	expectErr(t, cancelDraft(r, "u1", time.Now()), ErrCannotSpin)
+	if err := setSpinner(r, "u0", "u1", true); err != nil {
+		t.Fatal(err)
+	}
+	if err := cancelDraft(r, "u1", time.Now()); err != nil {
+		t.Fatal(err)
+	}
+
+	if r.Phase != model.PhaseLobby || r.CurrentSpin != nil || r.Picks != 0 || len(r.Teams) != 0 {
+		t.Fatalf("sorteio não foi desfeito: %+v", r)
+	}
+	if !slices.Equal(r.Pool, []string{"u0", "u1", "u2", "u3"}) {
+		t.Fatalf("roda deveria ter todo mundo de volta, veio %v", r.Pool)
+	}
+	if !allReady(r) || r.Format != (model.Format{Teams: 2, Size: 2}) {
+		t.Fatalf("prontos e formato deveriam continuar")
+	}
+	spinAndCommit(t, r, "u0")
+}
+
+func TestCancelDraftDropsWhoAlreadyMissedTheGrace(t *testing.T) {
+	r := newTestRoom(t, 3, model.Formats[0])
+	spinAndCommit(t, r, "u0")
+	now := time.Now()
+	disconnect(r, "u1", now.Add(-time.Second))
+	dropOffline(r, "u1")
+	disconnect(r, "u2", now.Add(time.Minute))
+
+	if err := cancelDraft(r, "u0", now); err != nil {
+		t.Fatal(err)
+	}
+	if indexOf(r, "u1") >= 0 {
+		t.Fatalf("quem já tinha perdido a tolerância deveria sair da sala")
+	}
+	if indexOf(r, "u2") < 0 || !slices.Contains(r.Pool, "u2") {
+		t.Fatalf("quem ainda pode voltar deveria continuar na roda")
+	}
+}

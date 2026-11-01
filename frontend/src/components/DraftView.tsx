@@ -1,4 +1,4 @@
-import type { CSSProperties } from "react";
+import { useState, type CSSProperties } from "react";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { wsSend } from "../store/roomSlice";
 import { selectParticipantsById, selectPermissions, selectRoom } from "../store/selectors";
@@ -73,9 +73,35 @@ export function DraftView() {
           )}
           {!perms.canSpin && !room.autoSpin && <p className="hint">Esperando o admin girar</p>}
         </div>
+        {perms.canSpin && <CancelDraft />}
       </div>
       {teams === 1 ? <PoolColumn people={pool} /> : column(1)}
     </main>
+  );
+}
+
+// Cancelar volta todo mundo para a sala, então pede confirmação antes.
+function CancelDraft() {
+  const dispatch = useAppDispatch();
+  const [confirming, setConfirming] = useState(false);
+
+  if (!confirming) {
+    return (
+      <button className="btn btn-ghost cancel-draft" onClick={() => setConfirming(true)}>
+        Cancelar sorteio
+      </button>
+    );
+  }
+  return (
+    <div className="cancel-confirm" role="group" aria-label="Confirmar cancelamento do sorteio">
+      <span>Cancelar o sorteio?</span>
+      <button className="btn btn-red px" onClick={() => dispatch(wsSend({ type: "cancel_draft" }))}>
+        Sim
+      </button>
+      <button className="btn btn-ghost" onClick={() => setConfirming(false)}>
+        Não
+      </button>
+    </div>
   );
 }
 

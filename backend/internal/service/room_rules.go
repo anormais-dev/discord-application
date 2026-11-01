@@ -220,6 +220,31 @@ func assign(r *model.Room, userID string) {
 	}
 }
 
+// cancelDraft desfaz o sorteio e volta todo mundo para a sala, mantendo formato e prontos.
+// Quem caiu e já passou da tolerância durante o sorteio sai agora, como sairia na sala.
+func cancelDraft(r *model.Room, userID string, now time.Time) error {
+	if !canSpin(r, userID) {
+		return ErrCannotSpin
+	}
+	if r.Phase != model.PhaseDrafting {
+		return ErrWrongPhase
+	}
+	r.CurrentSpin = nil
+	r.Teams = nil
+	r.Picks = 0
+	r.Phase = model.PhaseLobby
+	r.Pool = make([]string, 0, len(r.Participants))
+	for _, p := range r.Participants {
+		r.Pool = append(r.Pool, p.ID)
+	}
+	for _, p := range slices.Clone(r.Participants) {
+		if !p.Online && !p.ReconnectUntil.After(now) {
+			remove(r, p.ID)
+		}
+	}
+	return nil
+}
+
 // reset limpa inclusive os participantes; o próximo a entrar vira admin.
 func reset(r *model.Room, userID string) error {
 	if userID != r.AdminID {

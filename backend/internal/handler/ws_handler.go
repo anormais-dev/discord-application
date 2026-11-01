@@ -136,6 +136,8 @@ func (h *WSHandler) handle(ctx context.Context, instance string, c *client, msg 
 			return err
 		}
 		return h.rooms.SpinMap(instance, uid, maps)
+	case "cancel_draft":
+		return h.rooms.CancelDraft(instance, uid)
 	case "reset":
 		return h.rooms.Reset(instance, uid)
 	default:
