@@ -4,34 +4,16 @@ import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { wsSend } from "../store/roomSlice";
 import { selectPermissions, selectRoom } from "../store/selectors";
 import type { SpinState } from "../types/room";
+import { mediaUrl } from "../utils/runtime";
 
-function mapImagePath(map: string) {
-  const filename = map
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "");
-  return `/images/maps/${filename}.jpg`;
-}
-
-function MapCard({
-  map,
-  featured = false,
-}: {
-  map: string;
-  featured?: boolean;
-}) {
+// Sem imagem (API sem arte ou fora do ar) o card fica s\u00f3 com o nome.
+function MapCard({ map, image, featured = false }: { map: string; image?: string; featured?: boolean }) {
   const [imageMissing, setImageMissing] = useState(false);
 
   return (
     <article className={`map-card${featured ? " map-card-featured" : ""}`}>
       <div className="map-card-image">
-        {!imageMissing ? (
-          <img src={mapImagePath(map)} alt="" onError={() => setImageMissing(true)} />
-        ) : (
-          <span className="map-image-missing">Imagem ausente: {mapImagePath(map)}</span>
-        )}
+        {image && !imageMissing && <img src={mediaUrl(image)} alt="" onError={() => setImageMissing(true)} />}
       </div>
       <strong>{map}</strong>
     </article>
@@ -62,7 +44,9 @@ export function MapModal() {
   const dispatch = useAppDispatch();
   const room = useAppSelector(selectRoom);
   const perms = useAppSelector(selectPermissions);
-  const { data: maps = [], isError } = useGetMapsQuery();
+  const { data, isError } = useGetMapsQuery();
+  const maps = useMemo(() => data?.maps ?? [], [data]);
+  const images = data?.images ?? {};
   const viewportRef = useRef<HTMLDivElement>(null);
   const activeSpinRef = useRef<string | null>(null);
   const [offset, setOffset] = useState(0);
@@ -140,7 +124,7 @@ export function MapModal() {
         <h2 id="map-modal-title">Sorteio do mapa</h2>
         {hasResult ? (
           <>
-            <MapCard map={revealedMap} featured />
+            <MapCard map={revealedMap} image={images[revealedMap]?.splash} featured />
             <p className="map-status" aria-live="polite">Mapa escolhido</p>
           </>
         ) : ids.length > 0 ? (
@@ -154,7 +138,7 @@ export function MapModal() {
                 }}
               >
                 {carouselItems.map((map, index) => (
-                  <MapCard key={`${map}-${index}`} map={map} />
+                  <MapCard key={`${map}-${index}`} map={map} image={images[map]?.card} />
                 ))}
               </div>
               <span className="map-selection-line" aria-hidden="true" />

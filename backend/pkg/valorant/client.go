@@ -22,6 +22,8 @@ type Map struct {
 	UUID                string `json:"uuid"`
 	DisplayName         string `json:"displayName"`
 	TacticalDescription string `json:"tacticalDescription"`
+	ListViewIcon        string `json:"listViewIcon"`
+	Splash              string `json:"splash"`
 }
 
 func (c *Client) Maps(ctx context.Context) ([]Map, error) {

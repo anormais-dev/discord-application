@@ -22,7 +22,14 @@ type MapService struct {
 
 	mu        sync.Mutex
 	maps      []string
+	images    map[string]MapImages
 	fetchedAt time.Time
+}
+
+// MapImages são as artes de um mapa: a faixa leve para o carrossel e o splash grande para o resultado.
+type MapImages struct {
+	Card   string
+	Splash string
 }
 
 func NewMapService(client ValorantClient) *MapService {
@@ -47,6 +54,7 @@ func (s *MapService) CompetitiveMaps(ctx context.Context) ([]string, error) {
 		return nil, ErrMapsUnavailable
 	}
 	s.maps = names
+	s.images = imagesByName(all)
 	s.fetchedAt = s.now()
 	return s.maps, nil
 }
@@ -60,4 +68,21 @@ func competitive(all []valorant.Map) []string {
 	}
 	slices.Sort(names)
 	return names
+}
+
+// Images devolve as artes da última lista buscada em CompetitiveMaps.
+func (s *MapService) Images() map[string]MapImages {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.images
+}
+
+func imagesByName(all []valorant.Map) map[string]MapImages {
+	images := map[string]MapImages{}
+	for _, m := range all {
+		if m.TacticalDescription != "" {
+			images[m.DisplayName] = MapImages{Card: m.ListViewIcon, Splash: m.Splash}
+		}
+	}
+	return images
 }

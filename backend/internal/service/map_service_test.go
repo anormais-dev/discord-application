@@ -22,7 +22,7 @@ func (f *fakeValorant) Maps(context.Context) ([]valorant.Map, error) {
 }
 
 var apiMaps = []valorant.Map{
-	{DisplayName: "Haven", TacticalDescription: "A/B/C Sites"},
+	{DisplayName: "Haven", TacticalDescription: "A/B/C Sites", ListViewIcon: "haven-card.png", Splash: "haven-splash.png"},
 	{DisplayName: "The Range"},
 	{DisplayName: "Ascent", TacticalDescription: "A/B Sites"},
 	{DisplayName: "Skirmish A"},
@@ -64,5 +64,19 @@ func TestCompetitiveMapsWithoutCacheFails(t *testing.T) {
 	s := NewMapService(&fakeValorant{err: errors.New("fora do ar")})
 	if _, err := s.CompetitiveMaps(context.Background()); !errors.Is(err, ErrMapsUnavailable) {
 		t.Fatalf("erro = %v, esperado ErrMapsUnavailable", err)
+	}
+}
+
+func TestImagesComeWithTheCompetitiveMaps(t *testing.T) {
+	s := NewMapService(&fakeValorant{maps: apiMaps})
+	if _, err := s.CompetitiveMaps(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	images := s.Images()
+	if got := images["Haven"]; got != (MapImages{Card: "haven-card.png", Splash: "haven-splash.png"}) {
+		t.Fatalf("imagens do Haven = %+v", got)
+	}
+	if _, ok := images["The Range"]; ok {
+		t.Fatalf("mapa fora do competitivo não deveria ter imagem")
 	}
 }
