@@ -1,3 +1,4 @@
+import { CancelNotice } from "../components/CancelNotice";
 import { CompactView } from "../components/CompactView";
 import { DraftView } from "../components/DraftView";
 import { ErrorToast } from "../components/ErrorToast";
@@ -34,6 +35,7 @@ export function RoulettePage() {
       {room.phase === "drafting" && <DraftView />}
       {room.phase === "finished" && <ResultView />}
       <MapModal />
+      <CancelNotice />
       <ErrorToast />
     </>
   );

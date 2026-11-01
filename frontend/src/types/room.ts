@@ -40,6 +40,8 @@ export interface RoomState {
   mapSpin: SpinState | null;
   map: string;
   mapOpen: boolean;
+  // Quem cancelou a roleta por último; some quando ela volta a girar.
+  cancelled: { byId: string; byName: string; at: string } | null;
 }
 
 export type ClientMessage =

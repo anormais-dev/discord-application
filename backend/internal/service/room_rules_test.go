@@ -432,3 +432,22 @@ func TestCancelDraftDropsWhoAlreadyMissedTheGrace(t *testing.T) {
 		t.Fatalf("quem ainda pode voltar deveria continuar na roda")
 	}
 }
+
+func TestCancelDraftTellsWhoCancelledUntilNextDraft(t *testing.T) {
+	r := newTestRoom(t, 2, model.Formats[0])
+	if _, err := spin(r, testRand, "u0"); err != nil {
+		t.Fatal(err)
+	}
+	if err := cancelDraft(r, "u0", time.Now()); err != nil {
+		t.Fatal(err)
+	}
+	if r.Cancelled == nil || r.Cancelled.ByID != "u0" || r.Cancelled.ByName != "User 0" {
+		t.Fatalf("aviso deveria dizer quem cancelou, veio %+v", r.Cancelled)
+	}
+	if _, err := spin(r, testRand, "u0"); err != nil {
+		t.Fatal(err)
+	}
+	if r.Cancelled != nil {
+		t.Fatalf("aviso deveria sumir quando a roleta volta a girar")
+	}
+}

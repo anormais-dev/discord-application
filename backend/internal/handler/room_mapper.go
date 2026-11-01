@@ -25,6 +25,7 @@ func toRoomResponse(r *model.Room) dto.RoomResponse {
 		MapSpin:      toSpin(r.MapSpin),
 		Map:          r.Map,
 		MapOpen:      r.MapOpen,
+		Cancelled:    toCancellation(r.Cancelled),
 	}
 }
 
@@ -70,4 +71,11 @@ func toFormats(fs []model.Format) []dto.Format {
 		out[i] = toFormat(f)
 	}
 	return out
+}
+
+func toCancellation(c *model.Cancellation) *dto.CancellationResponse {
+	if c == nil {
+		return nil
+	}
+	return &dto.CancellationResponse{ByID: c.ByID, ByName: c.ByName, At: c.At}
 }

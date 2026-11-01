@@ -1356,6 +1356,12 @@ h3 {
   box-shadow: 4px 4px 0 var(--red-shadow);
 }
 
+/* Aviso para a sala, não erro: amarelo. */
+.toast.toast-info {
+  background: var(--yellow);
+  box-shadow: 4px 4px 0 var(--yellow-shadow);
+}
+
 .fatal {
   max-width: 90vw;
   white-space: pre-wrap;

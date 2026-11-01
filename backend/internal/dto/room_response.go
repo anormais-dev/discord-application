@@ -41,4 +41,11 @@ type RoomResponse struct {
 	MapSpin      *SpinResponse           `json:"mapSpin"`
 	Map          string                  `json:"map"`
 	MapOpen      bool                    `json:"mapOpen"`
+	Cancelled    *CancellationResponse   `json:"cancelled"`
+}
+
+type CancellationResponse struct {
+	ByID   string    `json:"byId"`
+	ByName string    `json:"byName"`
+	At     time.Time `json:"at"`
 }

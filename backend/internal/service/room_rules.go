@@ -122,6 +122,7 @@ func spin(r *model.Room, rng *rand.Rand, userID string) (*model.Spin, error) {
 		}
 		r.Picks = 0
 		r.Phase = model.PhaseDrafting
+		r.Cancelled = nil
 	case model.PhaseDrafting:
 	default:
 		return nil, ErrWrongPhase
@@ -229,6 +230,7 @@ func cancelDraft(r *model.Room, userID string, now time.Time) error {
 	if r.Phase != model.PhaseDrafting {
 		return ErrWrongPhase
 	}
+	r.Cancelled = &model.Cancellation{ByID: userID, ByName: r.Participants[indexOf(r, userID)].Name, At: now}
 	r.CurrentSpin = nil
 	r.Teams = nil
 	r.Picks = 0

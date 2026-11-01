@@ -23,6 +23,7 @@ type Room struct {
 	MapSpin      *Spin
 	Map          string
 	MapOpen      bool
+	Cancelled    *Cancellation
 }
 
 func NewRoom() *Room {
