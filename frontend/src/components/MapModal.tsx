@@ -5,6 +5,7 @@ import { wsSend } from "../store/roomSlice";
 import { selectPermissions, selectRoom } from "../store/selectors";
 import type { SpinState } from "../types/room";
 import { mediaUrl } from "../utils/runtime";
+import { playTick } from "../utils/sound";
 import { ValorantIcon } from "./Icons";
 
 // Sem imagem (API sem arte ou fora do ar) o card fica s\u00f3 com o nome.
@@ -114,6 +115,30 @@ export function MapModal() {
       cancelAnimationFrame(secondFrame);
     };
   }, [spinKey, carouselItems.length, carousel.targetIndex, !!spin, room?.mapOpen]);
+
+  // Tick a cada card que passa pelo ponteiro, como na roda. A posição vem da transição CSS em andamento.
+  useEffect(() => {
+    const viewport = viewportRef.current;
+    const track = viewport?.querySelector<HTMLElement>(".map-track");
+    if (!isRolling || !viewport || !track) return;
+    const cards = [...track.querySelectorAll<HTMLElement>(".map-card")];
+    let underPointer = -1;
+    let frame = 0;
+    const step = () => {
+      const pointer = viewport.clientWidth / 2 - new DOMMatrixReadOnly(getComputedStyle(track).transform).m41;
+      let i = 0;
+      while (i + 1 < cards.length && cards[i + 1].offsetLeft <= pointer) i++;
+      if (underPointer !== -1 && i !== underPointer) playTick();
+      underPointer = i;
+      frame = requestAnimationFrame(step);
+    };
+    frame = requestAnimationFrame(step);
+    const stop = setTimeout(() => cancelAnimationFrame(frame), animationDuration + 100);
+    return () => {
+      cancelAnimationFrame(frame);
+      clearTimeout(stop);
+    };
+  }, [isRolling, animationDuration]);
 
   if (!room?.mapOpen) return null;
 
